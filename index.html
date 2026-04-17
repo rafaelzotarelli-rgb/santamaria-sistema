@@ -147,19 +147,20 @@ textarea.fi{resize:vertical;min-height:64px}
 .fcard.alerta-w{border-color:var(--warn);background:var(--warn-bg)}
  
 /* ── CALENDAR ── */
-.cal-grid-hdr{display:grid;grid-template-columns:repeat(7,1fr)}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr)}
-.cgh{padding:6px 4px;text-align:center;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:.5px solid var(--border);font-weight:500}
-.cgd{padding:6px 4px;min-height:64px;border-right:.5px solid var(--border);border-bottom:.5px solid var(--border);cursor:pointer;transition:background .15s;position:relative}
+.cal-grid-hdr{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.cgh{padding:6px 2px;text-align:center;font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);border-bottom:.5px solid var(--border);font-weight:500;overflow:hidden}
+.cgd{padding:5px 3px;min-height:72px;border-right:.5px solid var(--border);border-bottom:.5px solid var(--border);cursor:pointer;transition:background .15s;position:relative;overflow:hidden;min-width:0}
 .cgd:nth-child(7n){border-right:none}
 .cgd:hover{background:var(--rose-l)}
 .cgd.today{background:var(--rose-l)}
 .cgd.other-month{opacity:.3}
-.cgd-num{font-size:11px;font-weight:500;color:var(--dark);margin-bottom:2px}
+.cgd-num{font-size:11px;font-weight:500;color:var(--dark);margin-bottom:2px;line-height:1}
 .cgd.today .cgd-num{background:var(--rose-d);color:white;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px}
-.cev{font-size:9px;background:var(--rose-l);color:var(--rose-d);border-radius:3px;padding:1px 4px;margin-bottom:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:500}
+.cev{font-size:9px;background:var(--rose-l);color:var(--rose-d);border-radius:3px;padding:1px 3px;margin-bottom:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:500;display:block;max-width:100%;box-sizing:border-box;line-height:1.4}
 .cev.realizado{background:var(--success-bg);color:var(--success)}
 .cev.outro{background:var(--gold-l);color:var(--gold-d)}
+.cev.gcal{background:var(--info-bg);color:var(--info)}
  
 /* ── UPLOAD ── */
 .uparea{border:1.5px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;background:var(--cream)}
@@ -280,14 +281,16 @@ textarea.fi{resize:vertical;min-height:64px}
         </div>
       </div>
       <div id="gcal-status-bar" style="display:none;align-items:center;gap:10px;padding:10px 16px;border-radius:10px;background:var(--success-bg);border:.5px solid var(--success);margin-bottom:14px;font-size:13px;color:var(--success)"></div>
-      <div class="card" style="padding:0;overflow:hidden">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:.5px solid var(--border)">
+      <div class="card" style="padding:0;overflow:hidden;width:100%">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:.5px solid var(--border)">
           <button class="btn bsec bsm" onclick="calNav(-1)">‹</button>
           <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:500" id="cal-label"></div>
           <button class="btn bsec bsm" onclick="calNav(1)">›</button>
         </div>
-        <div class="cal-grid-hdr" id="cal-hdr"></div>
-        <div class="cal-grid" id="cal-grid"></div>
+        <div style="width:100%;overflow:hidden">
+          <div class="cal-grid-hdr" id="cal-hdr"></div>
+          <div class="cal-grid" id="cal-grid"></div>
+        </div>
       </div>
       <div class="card" style="margin-top:14px">
         <div class="ctitle">Eventos do Google Agenda <span id="gcal-sync-badge" class="badge bn" style="font-size:11px">Não conectado</span></div>
@@ -722,7 +725,7 @@ function renderCalendar() {
     const ds=calYear+'-'+(calMonth+1).toString().padStart(2,'0')+'-'+d.toString().padStart(2,'0');
     const isToday=ds===todayStr;
     const evs=evMap[d]||[];
-    html+=`<div class="cgd${isToday?' today':''}"><div class="cgd-num">${d}</div>${evs.map(ev=>`<div class="cev${ev.status==='realizado'?' realizado':ev.tipo!=='Casamento'?' outro':''}">${ev.nome.replace(/Casamento |Bodas /,'')}</div>`).join('')}</div>`;
+    html+=`<div class="cgd${isToday?' today':''}"><div class="cgd-num">${d}</div>${evs.map(ev=>{const label=ev.nome.replace(/Casamento |Bodas |Aniversário /i,'');const gcalCls=ev._gcal?' gcal':'';const cls=ev.status==='realizado'?' realizado':ev.tipo==='Google Agenda'?' gcal':ev.tipo!=='Casamento'?' outro':'';return`<div class="cev${cls}" title="${ev.nome}">${label}</div>`;}).join('')}</div>`;
   }
   document.getElementById('cal-grid').innerHTML=html;
 }
