@@ -1180,9 +1180,10 @@ async function verEvento(id) {
           ).join('')) +
           ((docs||[]).filter(d=>!d.assinado&&d.zapsign_token).map(d=>
             '<div style="padding:10px 14px;border-radius:8px;background:var(--info-bg);color:var(--info);font-size:12px;margin-bottom:8px">' +
-              '<strong>' + d.nome + '</strong> — Aguardando assinatura<br>' +
-              '<button type="button" style="font-size:11px;background:none;border:none;color:var(--info);cursor:pointer;text-decoration:underline;padding:2px 0" ' +
-                'data-docid="' + d.id + '" data-evid2="' + id + '" onclick="verificarZapSign(this.dataset.docid,this.dataset.evid2)">Verificar status</button>' +
+              '<strong>' + d.nome + '</strong><br>' +
+              '<span style="font-size:11px;color:var(--info)">⏳ Aguardando assinaturas</span>' +
+              ' &nbsp; <button type="button" style="font-size:11px;background:none;border:none;color:var(--info);cursor:pointer;text-decoration:underline;padding:0" ' +
+                'data-docid="' + d.id + '" data-evid2="' + id + '" onclick="verificarZapSign(this.dataset.docid,this.dataset.evid2,false)">Verificar agora</button>' +
             '</div>'
           ).join('')) +
           ((docs||[]).filter(d=>!d.assinado&&!d.zapsign_token).length===0&&(docs||[]).length>0 ? '' :
@@ -1192,6 +1193,9 @@ async function verEvento(id) {
         '</div>' +
       '</div>' +
     '</div>';
+
+  // Auto-check ZapSign signatures silently
+  setTimeout(function() { verificarZapSignAuto(docs, id); }, 800);
 
   // Tab behavior
   document.querySelectorAll('#ev-dtabs .tab').forEach(btn=>{
@@ -2334,7 +2338,7 @@ async function enviarZapSign(docId, evId) {
           name:                    cli.nome,
           email:                   cli.email,
           phone_country:           '55',
-          phone:                   (cli.telefone||'').replace(/\D/g,''),
+          phone_number:            (cli.telefone||'').replace(/\D/g,''),
           send_automatic_email:    true,
           send_automatic_whatsapp: !!(cli.telefone),
         },
@@ -2392,20 +2396,28 @@ async function enviarZapSign(docId, evId) {
   }
 }
 
-async function verificarZapSign(docId, evId) {
+async function verificarZapSign(docId, evId, silencioso) {
   const { data: docsArr } = await sb.from('evento_documentos').select('*').eq('id', docId);
   const doc = docsArr && docsArr[0];
-  if(!doc || !doc.zapsign_token) { alert('Documento sem token ZapSign.'); return; }
+  if(!doc || !doc.zapsign_token) return;
 
   try {
     const resp = await fetch('/api/zapsign?action=status&token=' + doc.zapsign_token);
-    if(!resp.ok) throw new Error('Erro ao consultar ZapSign (' + resp.status + ')');
+    if(!resp.ok) throw new Error('Erro ' + resp.status);
 
-    const result  = await resp.json();
-    const signed  = result.status === 'signed';
-    const pdfUrl  = result.signed_file || result.pdf_file || null;
+    const result = await resp.json();
+    const allSigned = result.status === 'signed';
+    const pdfUrl    = result.signed_file || result.pdf_file || null;
+    const signers   = result.signers || [];
 
-    if(signed) {
+    // Build per-signer status detail
+    const signerStatus = signers.map(function(s) {
+      const st = s.status === 'signed' ? 'Assinado' : 'Aguardando';
+      const icon = s.status === 'signed' ? '✓' : '⏳';
+      return icon + ' ' + (s.name||s.email||'Signatario') + ': ' + st;
+    }).join('\n');
+
+    if(allSigned) {
       await sb.from('evento_documentos').update({
         assinado:    true,
         assinado_em: new Date().toISOString(),
@@ -2413,14 +2425,25 @@ async function verificarZapSign(docId, evId) {
       }).eq('id', docId);
       await loadAll();
       verEvento(evId);
-      alert('Documento assinado com sucesso! PDF disponivel para download.');
+      if(!silencioso) alert('Documento totalmente assinado!\n\n' + signerStatus + '\n\nPDF disponivel para download.');
     } else {
-      const signer = result.signers && result.signers[0];
-      const st     = signer ? signer.status : result.status;
-      alert('Status: ' + (st||'aguardando') + '. O signatario ainda nao assinou.');
+      await loadAll();
+      verEvento(evId);
+      if(!silencioso) alert('Assinaturas pendentes:\n\n' + signerStatus);
     }
+    return { allSigned, signers };
   } catch(err) {
-    alert('Erro ao verificar status: ' + err.message);
+    if(!silencioso) alert('Erro ao verificar: ' + err.message);
+    return null;
+  }
+}
+
+// Verifica automaticamente todos os docs com zapsign_token pendentes ao abrir aba
+async function verificarZapSignAuto(docs, evId) {
+  const pendentes = (docs||[]).filter(function(d) { return !d.assinado && d.zapsign_token; });
+  if(!pendentes.length) return;
+  for(var i=0; i<pendentes.length; i++) {
+    await verificarZapSign(pendentes[i].id, evId, true);
   }
 }
 
