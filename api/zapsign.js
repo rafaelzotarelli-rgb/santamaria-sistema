@@ -1,8 +1,8 @@
 // api/zapsign.js — Proxy serverless para ZapSign (evita bloqueio CORS)
 // Coloque este arquivo em /api/zapsign.js no repositório GitHub
 
-const ZAPSIGN_TOKEN = 'b4ef5c08-b314-49d0-9f72-8159a7a11fe154147000-c334-4c7b-81bb-0706d7b83a2c';
-const ZAPSIGN_BASE  = 'https://sandbox.zapsign.com.br/api/v1';
+const ZAPSIGN_TOKEN = '3db0872b-39f3-4614-b9ff-74f4f88ff876c96d3e32-5d1c-450c-97f3-9364ef56e986';
+const ZAPSIGN_BASE  = 'https://sandbox.api.zapsign.com.br/api/v1';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -31,7 +31,9 @@ export default async function handler(req, res) {
       try { data = JSON.parse(text); } catch(e) { data = { error: text }; }
 
       if (!response.ok) {
-        return res.status(response.status).json({ error: data.detail || data.message || data.error || text.slice(0,300) });
+        return res.status(response.status).json({
+          error: data.detail || data.message || data.error || text.slice(0, 300)
+        });
       }
       return res.status(200).json(data);
     }
@@ -46,7 +48,9 @@ export default async function handler(req, res) {
       try { data = JSON.parse(text); } catch(e) { data = { error: text }; }
 
       if (!response.ok) {
-        return res.status(response.status).json({ error: data.detail || data.error || text.slice(0,300) });
+        return res.status(response.status).json({
+          error: data.detail || data.error || text.slice(0, 300)
+        });
       }
       return res.status(200).json(data);
     }
