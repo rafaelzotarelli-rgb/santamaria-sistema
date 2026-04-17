@@ -2044,6 +2044,7 @@ function gerarHtmlResumo(evId) {
     '</table>' +
     '<div class="noprint" style="text-align:center;margin-top:40px;display:flex;gap:10px;justify-content:center">' +
     '<button onclick="window.print()" style="padding:10px 24px;background:#7a2f35;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">Imprimir / Salvar PDF</button>' +
+    '<button onclick="if(window.opener&&window.opener.salvarDocGerado){window.opener.salvarDocGerado(\''+evId+'\',\'Recibo de Pagamento\');window.close();}else{alert(\'Janela pai nao encontrada. Salve manualmente.\');}" style="padding:10px 18px;background:#3d6e4a;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">💾 Salvar no sistema</button>' +
     '<button onclick="window.close()" style="padding:10px 18px;background:#f0eeeb;color:#2c2320;border:none;border-radius:8px;font-size:14px;cursor:pointer">Fechar</button>' +
     '</div></body></html>'
   );
@@ -2242,11 +2243,6 @@ function gerarDocumento(evId, template, titulo, skipOffer) {
       const win = window.open('', '_blank');
       win.document.write(html);
       win.document.close();
-      setTimeout(function() {
-        if(confirm('Salvar "' + titulo + '" no evento para enviar por assinatura?')) {
-          salvarDocGerado(evId, titulo);
-        }
-      }, 700);
       return;
     }
   }
@@ -2293,15 +2289,11 @@ function gerarDocumento(evId, template, titulo, skipOffer) {
     '<pre>' + texto + '</pre>' +
     '<div class="noprint" style="margin-top:40px;text-align:center;display:flex;gap:10px;justify-content:center">' +
     '<button onclick="window.print()" style="padding:10px 28px;background:#7a2f35;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">Imprimir / Salvar PDF</button>' +
+    '<button onclick="if(window.opener&&window.opener.salvarDocGerado){window.opener.salvarDocGerado(\''+evId+'\',\''+titulo+'\');window.close();}else{alert(\'Janela pai nao encontrada.\');}" style="padding:10px 18px;background:#3d6e4a;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">💾 Salvar no sistema</button>' +
     '<button onclick="window.close()" style="padding:10px 18px;background:#f0eeeb;color:#2c2320;border:none;border-radius:8px;font-size:14px;cursor:pointer">Fechar</button>' +
     '</div></body></html>'
   );
   win.document.close();
-  setTimeout(function() {
-    if(confirm('Salvar "' + titulo + '" no evento para enviar por assinatura?')) {
-      salvarDocGerado(evId, titulo);
-    }
-  }, 700);
 }
 
 
