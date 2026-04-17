@@ -502,7 +502,7 @@ textarea.fi{resize:vertical;min-height:64px}
   <div class="fgrid2"><div class="fg"><label class="fl">Telefone / WhatsApp *</label><input class="fi" id="cli-tel" placeholder="(11) 99999-9999"></div><div class="fg"><label class="fl">E-mail</label><input class="fi" type="email" id="cli-email" placeholder="email@exemplo.com"></div></div>
   <div class="fg"><label class="fl">Endereço</label><input class="fi" id="cli-end" placeholder="Rua, número, bairro, cidade"></div>
   <div class="fg"><label class="fl">Observações</label><textarea class="fi" id="cli-obs" rows="2"></textarea></div>
-  <div class="mfoot"><button class="btn bsec" onclick="closeModal('novoCliente')">Cancelar</button><button type="button" class="btn bp" id="btn-salvar-cliente" onclick="salvarCliente()">Salvar</button></div>
+  <div class="mfoot"><button class="btn bsec" onclick="closeModal('novoCliente')">Cancelar</button><button type="button" class="btn bp" onclick="salvarCliente()">Salvar</button></div>
 </div></div>
 
 <div class="moverlay" id="modal-novoOrc"><div class="modal modal-sm">
@@ -940,21 +940,18 @@ function toggleNovoClienteInline() {
 }
 
 async function salvarClienteInline() {
-  const nome = document.getElementById('ev-cli-nome').value.trim();
-  const tel  = document.getElementById('ev-cli-tel').value.trim();
+  const nome  = document.getElementById('ev-cli-nome').value.trim();
+  const tel   = document.getElementById('ev-cli-tel').value.trim();
   const email = document.getElementById('ev-cli-email').value.trim();
-  const doc  = document.getElementById('ev-cli-doc').value.trim();
+  const doc   = document.getElementById('ev-cli-doc').value.trim();
   if(!nome) { alert('Informe o nome do cliente.'); return; }
-  const btn = document.querySelector('#novo-cli-inline .btn.bp');
-  if(btn) { btn.textContent = 'Salvando...'; btn.disabled = true; }
   const obj = { nome };
-  if(tel)   obj.telefone = tel;
-  if(email) obj.email    = email;
+  if(tel)   obj.telefone  = tel;
+  if(email) obj.email     = email;
   if(doc)   obj.cpf_cnpj = doc;
   const { data, error } = await sb.from('clientes').insert(obj).select();
-  if(btn) { btn.textContent = 'Salvar e selecionar'; btn.disabled = false; }
-  if(error) { alert('Erro ao salvar cliente: ' + error.message); return; }
-  if(!data || !data.length) { alert('Erro: cliente nao foi retornado.'); return; }
+  if(error) { alert('Erro ao salvar cliente: ' + error.message + ' (codigo: ' + error.code + ')'); return; }
+  if(!data || !data.length) { alert('Erro: cliente nao foi retornado pelo banco.'); return; }
   await loadAll();
   loadClientesSelect();
   document.getElementById('ev-cliente').value = data[0].id;
@@ -962,40 +959,27 @@ async function salvarClienteInline() {
 }
 
 async function salvarEvento() {
-  const nome = document.getElementById('ev-nome').value.trim();
-  const data = document.getElementById('ev-data').value;
-  if(!nome || !data) { alert('Preencha o nome e a data do evento.'); return; }
-  const horaRaw = document.getElementById('ev-hora').value || '';
-  const horario = horaRaw ? (horaRaw.length === 5 ? horaRaw + ':00' : horaRaw) : null;
+  const nome      = document.getElementById('ev-nome').value.trim();
+  const data      = document.getElementById('ev-data').value;
+  const horaRaw   = document.getElementById('ev-hora').value || '';
+  const tipo      = document.getElementById('ev-tipo').value;
+  const local     = document.getElementById('ev-local').value.trim() || null;
+  const convidados= Number(document.getElementById('ev-conv').value) || 0;
+  const valor     = parseFloat(document.getElementById('ev-valor').value) || 0;
+  const obs       = document.getElementById('ev-obs').value.trim() || null;
   const clienteId = document.getElementById('ev-cliente').value || null;
-  const obj = {
-    nome,
-    tipo: document.getElementById('ev-tipo').value,
-    data,
-    horario,
-    local: document.getElementById('ev-local').value || null,
-    convidados: Number(document.getElementById('ev-conv').value) || 0,
-    valor: parseFloat(document.getElementById('ev-valor').value) || 0,
-    obs: document.getElementById('ev-obs').value || null,
-    status: 'confirmado',
-    cliente_id: clienteId,
-  };
-  try {
-    const { data: inserted, error } = await sb.from('eventos').insert(obj).select();
-    if(error) { alert('Erro ao salvar evento: ' + error.message); return; }
-    closeModal('novoEvento');
-    ['ev-nome','ev-local','ev-obs'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('ev-conv').value = '';
-    document.getElementById('ev-valor').value = '';
-    await loadAll();
-    if(gcalConnected) addEventoToGcal({ nome, data, horario: horaRaw, local: obj.local || '', tipo: obj.tipo, convidados: obj.convidados });
-    renderEventos();
-    renderDashboard();
-    renderCalendar();
-    updateFuBadge();
-  } catch(err) {
-    alert('Erro inesperado: ' + err.message);
-  }
+  if(!nome || !data) { alert('Preencha o nome e a data do evento.'); return; }
+  const horario = horaRaw ? (horaRaw.length === 5 ? horaRaw + ':00' : horaRaw) : null;
+  const obj = { nome, tipo, data, horario, local, convidados, valor, obs, status: 'confirmado', cliente_id: clienteId };
+  const { error } = await sb.from('eventos').insert(obj);
+  if(error) { alert('Erro ao salvar evento: ' + error.message + ' (codigo: ' + error.code + ')'); return; }
+  closeModal('novoEvento');
+  await loadAll();
+  if(gcalConnected) addEventoToGcal({ nome, data, horario: horaRaw, local: local || '', tipo, convidados });
+  renderEventos();
+  renderDashboard();
+  renderCalendar();
+  updateFuBadge();
 }
 
 // ── CLIENTES ──────────────────────────────────────────────────────
@@ -1011,39 +995,31 @@ function renderClientes() {
 }
 
 async function salvarCliente() {
-  const btn = document.getElementById('btn-salvar-cliente');
   const nome = document.getElementById('cli-nome').value.trim();
   if(!nome) { alert('Informe o nome do cliente.'); return; }
-  if(btn) { btn.textContent = 'Salvando...'; btn.disabled = true; }
-  try {
-    const obj = { nome };
-    const tel   = document.getElementById('cli-tel').value.trim();
-    const email = document.getElementById('cli-email').value.trim();
-    const doc   = document.getElementById('cli-doc').value.trim();
-    const end   = document.getElementById('cli-end').value.trim();
-    const obs   = document.getElementById('cli-obs').value.trim();
-    if(tel)   obj.telefone  = tel;
-    if(email) obj.email     = email;
-    if(doc)   obj.cpf_cnpj = doc;
-    if(end)   obj.endereco  = end;
-    if(obs)   obj.obs       = obs;
-    const { data, error } = await sb.from('clientes').insert(obj).select();
-    if(error) {
-      alert('Erro ao salvar cliente:\n' + error.message + '\n\nCodigo: ' + error.code);
-      return;
-    }
-    closeModal('novoCliente');
-    ['cli-nome','cli-tel','cli-email','cli-doc','cli-end','cli-obs'].forEach(id => {
-      const el = document.getElementById(id); if(el) el.value = '';
-    });
-    await loadAll();
-    renderClientes();
-    loadClientesSelect();
-  } catch(err) {
-    alert('Erro inesperado ao salvar cliente:\n' + err.message);
-  } finally {
-    if(btn) { btn.textContent = 'Salvar'; btn.disabled = false; }
+  const obj = { nome };
+  const tel   = document.getElementById('cli-tel').value.trim();
+  const email = document.getElementById('cli-email').value.trim();
+  const doc   = document.getElementById('cli-doc').value.trim();
+  const end   = document.getElementById('cli-end').value.trim();
+  const obs   = document.getElementById('cli-obs').value.trim();
+  if(tel)   obj.telefone  = tel;
+  if(email) obj.email     = email;
+  if(doc)   obj.cpf_cnpj = doc;
+  if(end)   obj.endereco  = end;
+  if(obs)   obj.obs       = obs;
+  const { data, error } = await sb.from('clientes').insert(obj).select();
+  if(error) {
+    alert('Erro ao salvar cliente: ' + error.message + ' (codigo: ' + error.code + ')');
+    return;
   }
+  closeModal('novoCliente');
+  ['cli-nome','cli-tel','cli-email','cli-doc','cli-end','cli-obs'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value = '';
+  });
+  await loadAll();
+  renderClientes();
+  loadClientesSelect();
 }
 
 function loadClientesSelect() {
