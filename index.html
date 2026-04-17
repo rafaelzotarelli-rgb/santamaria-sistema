@@ -525,7 +525,7 @@ textarea.fi{resize:vertical;min-height:64px}
   <div class="mtitle" id="edit-modelo-title">Editar modelo<button class="mclose" onclick="closeModal('editModelo')">✕</button></div>
   <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Edite o conteúdo do modelo. Use as variáveis entre colchetes — elas serão substituídas pelos dados do evento ao gerar o documento.</div>
   <div style="background:var(--info-bg);border-radius:9px;padding:10px 14px;font-size:12px;color:var(--info);margin-bottom:14px">
-    Variáveis disponíveis: <strong>[CLIENTE]</strong> [EVENTO] [DATA] [LOCAL] [CONVIDADOS] [VALOR] [EMPRESA]
+    Variáveis disponíveis:<br>    <strong>Cliente PF:</strong> [CLIENTE] [CPF] [RG] [EMAIL] [CELULAR] [ENDERECO] [CEP] [CIDADE] [ESTADO]<br>    <strong>Cliente PJ:</strong> [RAZAO_SOCIAL] [CNPJ] [IE] [REPRESENTANTE] [REP_CPF]<br>    <strong>Evento:</strong> [EVENTO] [DATA] [LOCAL] [HORARIO] [HORA_INICIO] [HORA_FIM] [DURACAO] [CONVIDADOS] [VALOR] [EMPRESA] [HOJE]
   </div>
   <div class="fg"><label class="fl">Nome do modelo</label><input class="fi" id="em-nome" placeholder="Ex: Contrato padrão 2025"></div>
   <div class="fg"><label class="fl">Conteúdo do modelo</label><textarea class="fi" id="em-conteudo" rows="16" style="font-family:monospace;font-size:12px" placeholder="Digite ou cole aqui o texto do seu contrato/recibo..."></textarea></div>
@@ -566,13 +566,87 @@ textarea.fi{resize:vertical;min-height:64px}
   <div class="mfoot"><button type="button" class="btn bsec" onclick="closeModal('novoEvento')">Cancelar</button><button type="button" class="btn bp" onclick="salvarEvento()">Salvar Evento</button></div>
 </div></div>
 
-<div class="moverlay" id="modal-novoCliente"><div class="modal modal-sm">
-  <div class="mtitle">Novo Cliente<button class="mclose" onclick="closeModal('novoCliente')">✕</button></div>
-  <div class="fgrid2"><div class="fg"><label class="fl">Nome completo *</label><input class="fi" id="cli-nome" placeholder="Nome"></div><div class="fg"><label class="fl">CPF / CNPJ</label><input class="fi" id="cli-doc" placeholder="000.000.000-00"></div></div>
-  <div class="fgrid2"><div class="fg"><label class="fl">Telefone / WhatsApp *</label><input class="fi" id="cli-tel" placeholder="(11) 99999-9999"></div><div class="fg"><label class="fl">E-mail</label><input class="fi" type="email" id="cli-email" placeholder="email@exemplo.com"></div></div>
-  <div class="fg"><label class="fl">Endereço</label><input class="fi" id="cli-end" placeholder="Rua, número, bairro, cidade"></div>
-  <div class="fg"><label class="fl">Observações</label><textarea class="fi" id="cli-obs" rows="2"></textarea></div>
-  <div class="mfoot"><button class="btn bsec" onclick="closeModal('novoCliente')">Cancelar</button><button type="button" class="btn bp" onclick="salvarCliente()">Salvar</button></div>
+<div class="moverlay" id="modal-novoCliente"><div class="modal" style="max-height:92vh;overflow-y:auto">
+  <div class="mtitle" id="cli-modal-title">Novo Cliente<button class="mclose" onclick="closeModal('novoCliente')">✕</button></div>
+
+  <div class="fg">
+    <label class="fl">Tipo de pessoa</label>
+    <div style="display:flex;gap:10px">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+        <input type="radio" name="cli-tipo" value="pf" id="cli-tipo-pf" checked onchange="toggleTipoCli()"> Pessoa Física
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+        <input type="radio" name="cli-tipo" value="pj" id="cli-tipo-pj" onchange="toggleTipoCli()"> Pessoa Jurídica
+      </label>
+    </div>
+  </div>
+
+  <!-- PESSOA FÍSICA -->
+  <div id="cli-pf-fields">
+    <div class="fgrid2">
+      <div class="fg"><label class="fl">Nome completo *</label><input class="fi" id="cli-nome" placeholder="Nome completo"></div>
+      <div class="fg"><label class="fl">CPF</label><input class="fi" id="cli-cpf" placeholder="000.000.000-00"></div>
+    </div>
+    <div class="fgrid2">
+      <div class="fg"><label class="fl">RG</label><input class="fi" id="cli-rg" placeholder="00.000.000-0"></div>
+      <div class="fg"><label class="fl">Data de nascimento</label><input class="fi" type="date" id="cli-nasc"></div>
+    </div>
+    <div class="fgrid2">
+      <div class="fg"><label class="fl">Celular / WhatsApp *</label><input class="fi" id="cli-tel" placeholder="(11) 99999-9999"></div>
+      <div class="fg"><label class="fl">E-mail</label><input class="fi" type="email" id="cli-email" placeholder="email@exemplo.com"></div>
+    </div>
+    <div class="fgrid2">
+      <div class="fg"><label class="fl">CEP</label><input class="fi" id="cli-cep" placeholder="00000-000" oninput="buscarCep(this.value)"></div>
+      <div class="fg"><label class="fl">Rua / Avenida</label><input class="fi" id="cli-rua" placeholder="Rua das Flores"></div>
+    </div>
+    <div class="fgrid3">
+      <div class="fg"><label class="fl">Número</label><input class="fi" id="cli-numero" placeholder="123"></div>
+      <div class="fg"><label class="fl">Complemento</label><input class="fi" id="cli-comp" placeholder="Apto 42"></div>
+      <div class="fg"><label class="fl">Bairro</label><input class="fi" id="cli-bairro" placeholder="Centro"></div>
+    </div>
+    <div class="fgrid2">
+      <div class="fg"><label class="fl">Cidade</label><input class="fi" id="cli-cidade" placeholder="São Paulo"></div>
+      <div class="fg"><label class="fl">Estado</label><input class="fi" id="cli-estado" placeholder="SP" maxlength="2" style="text-transform:uppercase"></div>
+    </div>
+  </div>
+
+  <!-- PESSOA JURÍDICA -->
+  <div id="cli-pj-fields" style="display:none">
+    <div class="fgrid2">
+      <div class="fg"><label class="fl">Razão social *</label><input class="fi" id="cli-razao" placeholder="Empresa LTDA"></div>
+      <div class="fg"><label class="fl">CNPJ</label><input class="fi" id="cli-cnpj" placeholder="00.000.000/0000-00"></div>
+    </div>
+    <div class="fgrid2">
+      <div class="fg"><label class="fl">Inscrição estadual</label><input class="fi" id="cli-ie" placeholder="000.000.000.000"></div>
+      <div class="fg"><label class="fl">Celular / WhatsApp</label><input class="fi" id="cli-tel-pj" placeholder="(11) 99999-9999"></div>
+    </div>
+    <div class="fg"><label class="fl">E-mail</label><input class="fi" type="email" id="cli-email-pj" placeholder="contato@empresa.com.br"></div>
+    <div class="divider"></div>
+    <div style="font-size:12px;font-weight:500;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">Representante legal</div>
+    <div class="fgrid2">
+      <div class="fg"><label class="fl">Nome do representante *</label><input class="fi" id="cli-rep" placeholder="João da Silva"></div>
+      <div class="fg"><label class="fl">CPF do representante</label><input class="fi" id="cli-rep-cpf" placeholder="000.000.000-00"></div>
+    </div>
+    <div class="fgrid2">
+      <div class="fg"><label class="fl">CEP</label><input class="fi" id="cli-cep-pj" placeholder="00000-000" oninput="buscarCep(this.value,'pj')"></div>
+      <div class="fg"><label class="fl">Rua / Avenida</label><input class="fi" id="cli-rua-pj" placeholder="Rua das Flores"></div>
+    </div>
+    <div class="fgrid3">
+      <div class="fg"><label class="fl">Número</label><input class="fi" id="cli-numero-pj" placeholder="123"></div>
+      <div class="fg"><label class="fl">Complemento</label><input class="fi" id="cli-comp-pj" placeholder="Sala 10"></div>
+      <div class="fg"><label class="fl">Bairro</label><input class="fi" id="cli-bairro-pj" placeholder="Centro"></div>
+    </div>
+    <div class="fgrid2">
+      <div class="fg"><label class="fl">Cidade</label><input class="fi" id="cli-cidade-pj" placeholder="São Paulo"></div>
+      <div class="fg"><label class="fl">Estado</label><input class="fi" id="cli-estado-pj" placeholder="SP" maxlength="2" style="text-transform:uppercase"></div>
+    </div>
+  </div>
+
+  <div class="fg" style="margin-top:8px"><label class="fl">Observações</label><textarea class="fi" id="cli-obs" rows="2" placeholder="Informações adicionais..."></textarea></div>
+  <div class="mfoot">
+    <button class="btn bsec" onclick="closeModal('novoCliente')">Cancelar</button>
+    <button type="button" class="btn bp" onclick="salvarCliente()">Salvar</button>
+  </div>
 </div></div>
 
 <div class="moverlay" id="modal-novoOrc"><div class="modal modal-sm">
@@ -1307,29 +1381,86 @@ function renderClientes() {
   </tr>`).join('')||`<tr><td colspan="6" class="empty">Nenhum cliente cadastrado</td></tr>`;
 }
 
-async function salvarCliente() {
-  const nome = document.getElementById('cli-nome').value.trim();
-  if(!nome) { alert('Informe o nome do cliente.'); return; }
-  const obj = { nome };
-  const tel   = document.getElementById('cli-tel').value.trim();
-  const email = document.getElementById('cli-email').value.trim();
-  const doc   = document.getElementById('cli-doc').value.trim();
-  const end   = document.getElementById('cli-end').value.trim();
-  const obs   = document.getElementById('cli-obs').value.trim();
-  if(tel)   obj.telefone  = tel;
-  if(email) obj.email     = email;
-  if(doc)   obj.cpf_cnpj = doc;
-  if(end)   obj.endereco  = end;
-  if(obs)   obj.obs       = obs;
-  const { data, error } = await sb.from('clientes').insert(obj).select();
-  if(error) {
-    alert('Erro ao salvar cliente: ' + error.message + ' (codigo: ' + error.code + ')');
-    return;
+function toggleTipoCli() {
+  const isPf = document.getElementById('cli-tipo-pf').checked;
+  document.getElementById('cli-pf-fields').style.display = isPf ? '' : 'none';
+  document.getElementById('cli-pj-fields').style.display = isPf ? 'none' : '';
+}
+
+async function buscarCep(cep, tipo) {
+  cep = (cep||'').replace(/\D/g,'');
+  if(cep.length !== 8) return;
+  try {
+    const r = await fetch('https://viacep.com.br/ws/' + cep + '/json/');
+    const d = await r.json();
+    if(d.erro) return;
+    const suf = tipo === 'pj' ? '-pj' : '';
+    const set = function(id, val) { const el=document.getElementById(id+suf); if(el&&val) el.value=val; };
+    set('cli-rua',    d.logradouro);
+    set('cli-bairro', d.bairro);
+    set('cli-cidade', d.localidade);
+    set('cli-estado', d.uf);
+  } catch(e) {}
+}
+
+function coletarDadosCli() {
+  const isPf = document.getElementById('cli-tipo-pf').checked;
+  const obs  = (document.getElementById('cli-obs').value||'').trim();
+  const obj  = { tipo_pessoa: isPf ? 'pf' : 'pj' };
+  if(obs) obj.obs = obs;
+
+  const g = function(id) { const el=document.getElementById(id); return el ? el.value.trim() : ''; };
+
+  if(isPf) {
+    const nome = g('cli-nome'); if(!nome) { alert('Informe o nome do cliente.'); return null; }
+    obj.nome     = nome;
+    obj.cpf_cnpj = g('cli-cpf');
+    obj.rg       = g('cli-rg');
+    obj.data_nasc= g('cli-nasc');
+    obj.telefone = g('cli-tel');
+    obj.email    = g('cli-email');
+    const end = [g('cli-rua'), g('cli-numero'), g('cli-comp'), g('cli-bairro'), g('cli-cidade')+' - '+g('cli-estado'), 'CEP: '+g('cli-cep')].filter(Boolean).join(', ');
+    obj.endereco = end || null;
+    obj.cep      = g('cli-cep');
+    obj.cidade   = g('cli-cidade');
+    obj.estado   = g('cli-estado');
+  } else {
+    const razao = g('cli-razao'); if(!razao) { alert('Informe a razão social.'); return null; }
+    obj.nome          = razao;
+    obj.razao_social  = razao;
+    obj.cpf_cnpj      = g('cli-cnpj');
+    obj.ie            = g('cli-ie');
+    obj.telefone      = g('cli-tel-pj');
+    obj.email         = g('cli-email-pj');
+    obj.representante = g('cli-rep');
+    obj.rep_cpf       = g('cli-rep-cpf');
+    const end = [g('cli-rua-pj'), g('cli-numero-pj'), g('cli-comp-pj'), g('cli-bairro-pj'), g('cli-cidade-pj')+' - '+g('cli-estado-pj'), 'CEP: '+g('cli-cep-pj')].filter(Boolean).join(', ');
+    obj.endereco = end || null;
+    obj.cep      = g('cli-cep-pj');
+    obj.cidade   = g('cli-cidade-pj');
+    obj.estado   = g('cli-estado-pj');
   }
+  // Remove empty strings
+  Object.keys(obj).forEach(function(k){ if(obj[k]==='') delete obj[k]; });
+  return obj;
+}
+
+function limparFormCli() {
+  ['cli-nome','cli-cpf','cli-rg','cli-nasc','cli-tel','cli-email',
+   'cli-cep','cli-rua','cli-numero','cli-comp','cli-bairro','cli-cidade','cli-estado',
+   'cli-razao','cli-cnpj','cli-ie','cli-tel-pj','cli-email-pj','cli-rep','cli-rep-cpf',
+   'cli-cep-pj','cli-rua-pj','cli-numero-pj','cli-comp-pj','cli-bairro-pj','cli-cidade-pj','cli-estado-pj',
+   'cli-obs'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('cli-tipo-pf').checked = true;
+  toggleTipoCli();
+}
+
+async function salvarCliente() {
+  const obj = coletarDadosCli(); if(!obj) return;
+  const { data, error } = await sb.from('clientes').insert(obj).select();
+  if(error) { alert('Erro ao salvar cliente: ' + error.message); return; }
   closeModal('novoCliente');
-  ['cli-nome','cli-tel','cli-email','cli-doc','cli-end','cli-obs'].forEach(id => {
-    const el = document.getElementById(id); if(el) el.value = '';
-  });
+  limparFormCli();
   await loadAll();
   renderClientes();
   loadClientesSelect();
@@ -1971,13 +2102,38 @@ async function editarEvento(evId) {
 
 async function editarCliente(cliId, evId) {
   const c = CACHE.clientes.find(x=>x.id===cliId); if(!c) return;
-  document.getElementById('cli-nome').value  = c.nome || '';
-  document.getElementById('cli-tel').value   = c.telefone || '';
-  document.getElementById('cli-email').value = c.email || '';
-  document.getElementById('cli-doc').value   = c.cpf_cnpj || '';
-  document.getElementById('cli-end').value   = c.endereco || '';
-  document.getElementById('cli-obs').value   = c.obs || '';
-  window._editCliId = cliId;
+  limparFormCli();
+  const isPj = c.tipo_pessoa === 'pj';
+  if(isPj) {
+    document.getElementById('cli-tipo-pj').checked = true;
+    toggleTipoCli();
+    const s = function(id,v){ const el=document.getElementById(id); if(el&&v) el.value=v; };
+    s('cli-razao',    c.razao_social || c.nome);
+    s('cli-cnpj',     c.cpf_cnpj);
+    s('cli-ie',       c.ie);
+    s('cli-tel-pj',   c.telefone);
+    s('cli-email-pj', c.email);
+    s('cli-rep',      c.representante);
+    s('cli-rep-cpf',  c.rep_cpf);
+    s('cli-cep-pj',   c.cep);
+    s('cli-cidade-pj',c.cidade);
+    s('cli-estado-pj',c.estado);
+  } else {
+    document.getElementById('cli-tipo-pf').checked = true;
+    toggleTipoCli();
+    const s = function(id,v){ const el=document.getElementById(id); if(el&&v) el.value=v; };
+    s('cli-nome',   c.nome);
+    s('cli-cpf',    c.cpf_cnpj);
+    s('cli-rg',     c.rg);
+    s('cli-nasc',   c.data_nasc);
+    s('cli-tel',    c.telefone);
+    s('cli-email',  c.email);
+    s('cli-cep',    c.cep);
+    s('cli-cidade', c.cidade);
+    s('cli-estado', c.estado);
+  }
+  document.getElementById('cli-obs').value = c.obs || '';
+  window._editCliId  = cliId;
   window._editCliEvId = evId;
   openModal('novoCliente');
   document.querySelector('#modal-novoCliente .mtitle').childNodes[0].textContent = 'Editar Cliente';
@@ -2126,23 +2282,12 @@ async function salvarCliente() {
   if(window._editCliId) {
     const cliId = window._editCliId;
     const evId  = window._editCliEvId;
-    const nome  = document.getElementById('cli-nome').value.trim();
-    if(!nome){ alert('Informe o nome.'); return; }
-    const obj = { nome };
-    const tel   = document.getElementById('cli-tel').value.trim();
-    const email = document.getElementById('cli-email').value.trim();
-    const doc   = document.getElementById('cli-doc').value.trim();
-    const end   = document.getElementById('cli-end').value.trim();
-    const obs   = document.getElementById('cli-obs').value.trim();
-    if(tel)   obj.telefone  = tel;
-    if(email) obj.email     = email;
-    if(doc)   obj.cpf_cnpj = doc;
-    if(end)   obj.endereco  = end;
-    if(obs)   obj.obs       = obs;
+    const obj = coletarDadosCli(); if(!obj) return;
     const { error } = await sb.from('clientes').update(obj).eq('id', cliId);
     if(error){ alert('Erro: ' + error.message); return; }
     closeModal('novoCliente');
-    window._editCliId  = null;
+    limparFormCli();
+    window._editCliId   = null;
     window._editCliEvId = null;
     document.querySelector('#modal-novoCliente .mtitle').childNodes[0].textContent = 'Novo Cliente';
     await loadAll();
@@ -2266,21 +2411,47 @@ function gerarDocumento(evId, template, titulo, skipOffer) {
   const descStr2  = desconto2 > 0 ? 'Desconto: - ' + fmtMoney(desconto2) + '\n' : '';
   const adicStr2  = adicional2 > 0 ? 'Adicional: + ' + fmtMoney(adicional2) + '\n' : '';
 
+  // Calcular duração e horários
+  const horaInicio = ev.horario ? ev.horario.slice(0,5) : '';
+  const duracaoH   = ev.duracao || 6;
+  const horaFim    = horaInicio ? (function(){
+    const parts = horaInicio.split(':');
+    const mins  = parseInt(parts[0])*60 + parseInt(parts[1]) + duracaoH*60;
+    return String(Math.floor(mins/60)%24).padStart(2,'0') + ':' + String(mins%60).padStart(2,'0');
+  })() : '';
+
   const texto = template
-    .replace(/\[CLIENTE\]/g,    cli ? cli.nome : '(cliente)')
-    .replace(/\[EVENTO\]/g,     ev.nome)
-    .replace(/\[DATA\]/g,       fmtDate(ev.data))
-    .replace(/\[LOCAL\]/g,      ev.local || '(a definir)')
-    .replace(/\[CONVIDADOS\]/g, (ev.convidados||0) + ' pessoas')
-    .replace(/\[VALOR\]/g,      fmtMoney(valorContrato))
-    .replace(/\[EMPRESA\]/g,    'Santa Maria Buffet')
-    .replace(/\[HOJE\]/g,       new Date().toLocaleDateString('pt-BR'))
-    .replace(/\[ITENS\]/g,      itensStr)
-    .replace(/\[PAGO\]/g,       fmtMoney(totalPago))
-    .replace(/\[SALDO\]/g,      fmtMoney(Math.max(0, valorContrato - totalPago)))
-    .replace(/\[DESCONTO\]/g,   descStr2)
-    .replace(/\[ADICIONAL\]/g,  adicStr2)
-    .replace(/\[PAGAMENTOS\]/g, pagStr);
+    .replace(/\[CLIENTE\]/g,       cli ? cli.nome : '(cliente)')
+    .replace(/\[CPF\]/g,           (cli && cli.cpf_cnpj) || '')
+    .replace(/\[RG\]/g,            (cli && cli.rg) || '')
+    .replace(/\[EMAIL\]/g,         (cli && cli.email) || '')
+    .replace(/\[CELULAR\]/g,       (cli && cli.telefone) || '')
+    .replace(/\[ENDERECO\]/g,      (cli && cli.endereco) || '')
+    .replace(/\[CEP\]/g,           (cli && cli.cep) || '')
+    .replace(/\[CIDADE\]/g,        (cli && cli.cidade) || '')
+    .replace(/\[ESTADO\]/g,        (cli && cli.estado) || '')
+    .replace(/\[RAZAO_SOCIAL\]/g,  (cli && (cli.razao_social || cli.nome)) || '')
+    .replace(/\[CNPJ\]/g,          (cli && cli.cpf_cnpj) || '')
+    .replace(/\[IE\]/g,            (cli && cli.ie) || '')
+    .replace(/\[REPRESENTANTE\]/g, (cli && cli.representante) || '')
+    .replace(/\[REP_CPF\]/g,       (cli && cli.rep_cpf) || '')
+    .replace(/\[EVENTO\]/g,        ev.nome)
+    .replace(/\[DATA\]/g,          fmtDate(ev.data))
+    .replace(/\[LOCAL\]/g,         ev.local || '(a definir)')
+    .replace(/\[HORARIO\]/g,       horaInicio || '(a definir)')
+    .replace(/\[HORA_INICIO\]/g,   horaInicio || '(a definir)')
+    .replace(/\[HORA_FIM\]/g,      horaFim || '(a definir)')
+    .replace(/\[DURACAO\]/g,       duracaoH + ' horas')
+    .replace(/\[CONVIDADOS\]/g,    (ev.convidados||0) + ' pessoas')
+    .replace(/\[VALOR\]/g,         fmtMoney(valorContrato))
+    .replace(/\[EMPRESA\]/g,       'Santa Maria Buffet')
+    .replace(/\[HOJE\]/g,          new Date().toLocaleDateString('pt-BR'))
+    .replace(/\[ITENS\]/g,         itensStr)
+    .replace(/\[PAGO\]/g,          fmtMoney(totalPago))
+    .replace(/\[SALDO\]/g,         fmtMoney(Math.max(0, valorContrato - totalPago)))
+    .replace(/\[DESCONTO\]/g,      descStr2)
+    .replace(/\[ADICIONAL\]/g,     adicStr2)
+    .replace(/\[PAGAMENTOS\]/g,    pagStr);
 
   const win = window.open('', '_blank');
   win.document.write(
