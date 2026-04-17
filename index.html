@@ -500,7 +500,8 @@ textarea.fi{resize:vertical;min-height:64px}
 // CONFIGURAÇÃO SUPABASE
 // ══════════════════════════════════════════════════════════════════
 const SUPABASE_URL = 'https://zdfhyrqbpruxpjnvzbmr.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkZmh5cnFicHJ1eHBqbnZ6Ym1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0MTY3NDYsImV4cCI6MjA5MTk5Mjc0Nn0.cKVvlhiBjJWKoroGthEwsE6F69LgzE_PmhAczEVzRu4';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkZmh5cnFicHJ1eHBqbnZ6Ym1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0MTY3NDYsImV4cCI6MjA5MTk5Mjc0Nn0.cKVvlhiBjJWKoroGthEwsE6F69LgzE_PmhAczEVzRu4
+  ';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
  
 // ── HELPERS ──────────────────────────────────────────────────────
@@ -1252,6 +1253,7 @@ function connectGoogle() {
 function disconnectGoogle() {
   gcalToken = null; gcalConnected = false;
   localStorage.removeItem('gcal_token');
+  localStorage.removeItem('gcal_calendar_id');
   updateGcalUI(false);
 }
  
@@ -1284,20 +1286,36 @@ async function gcalFetch(url, options) {
   return res.json();
 }
  
+async function findCalendarId(name) {
+  const data = await gcalFetch('https://www.googleapis.com/calendar/v3/users/me/calendarList');
+  if(!data || !data.items) return 'primary';
+  const found = data.items.find(function(c) { return c.summary === name; });
+  if(found) {
+    localStorage.setItem('gcal_calendar_id', found.id);
+    return found.id;
+  }
+  return 'primary';
+}
+ 
 async function loadGcalEvents() {
-  const now   = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
-  const end   = new Date(now.getFullYear(), now.getMonth() + 3, 1).toISOString();
-  const data  = await gcalFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=' + encodeURIComponent(start) + '&timeMax=' + encodeURIComponent(end) + '&singleEvents=true&orderBy=startTime&maxResults=50');
+  const now    = new Date();
+  const start  = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
+  const end    = new Date(now.getFullYear(), now.getMonth() + 3, 1).toISOString();
+  const saved  = localStorage.getItem('gcal_calendar_id');
+  const calId  = saved || await findCalendarId('Eventos Buffet Santa Maria');
+  const encId  = encodeURIComponent(calId);
+  const data   = await gcalFetch('https://www.googleapis.com/calendar/v3/calendars/' + encId + '/events?timeMin=' + encodeURIComponent(start) + '&timeMax=' + encodeURIComponent(end) + '&singleEvents=true&orderBy=startTime&maxResults=50');
   if(!data || !data.items) return;
   const el = document.getElementById('gcal-events-list');
   if(!el) return;
   const events = data.items.filter(function(e) { return e.status !== 'cancelled'; });
-  if(!events.length) { el.innerHTML = '<div class="empty">Nenhum evento no Google Agenda neste periodo.</div>'; return; }
+  const badge  = document.getElementById('gcal-sync-badge');
+  if(badge) { badge.textContent = 'Eventos Buffet Santa Maria (' + events.length + ')'; badge.className = 'badge bs'; }
+  if(!events.length) { el.innerHTML = '<div class="empty">Nenhum evento em Eventos Buffet Santa Maria neste periodo.</div>'; return; }
   el.innerHTML = events.map(function(e) {
     const st = (e.start && (e.start.dateTime || e.start.date)) || '';
-    const d = st ? new Date(st).toLocaleDateString('pt-BR', {day:'2-digit',month:'short',year:'numeric'}) : '---';
-    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:9px;background:var(--cream);border:.5px solid var(--border);margin-bottom:7px"><div><div style="font-size:13px;font-weight:500">' + (e.summary||'Sem titulo') + '</div><div style="font-size:11px;color:var(--muted)">' + d + (e.location ? ' - ' + e.location : '') + '</div></div><span class="badge bi" style="font-size:10px">Google</span></div>';
+    const d  = st ? new Date(st).toLocaleDateString('pt-BR', {day:'2-digit',month:'short',year:'numeric'}) : '---';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:9px;background:var(--cream);border:.5px solid var(--border);margin-bottom:7px"><div><div style="font-size:13px;font-weight:500">' + (e.summary||'Sem titulo') + '</div><div style="font-size:11px;color:var(--muted)">' + d + (e.location ? ' - ' + e.location : '') + '</div></div><span class="badge bi" style="font-size:10px">Buffet Santa Maria</span></div>';
   }).join('');
   mergeGcalIntoCalendar(events);
 }
@@ -1312,19 +1330,27 @@ function mergeGcalIntoCalendar(gcalEvents) {
   renderCalendar();
 }
  
+async function gcalCalendarId() {
+  return localStorage.getItem('gcal_calendar_id') || await findCalendarId('Eventos Buffet Santa Maria');
+}
+ 
 async function syncEventosToGcal() {
   if(!gcalToken) return;
+  const calId   = await gcalCalendarId();
+  const encId   = encodeURIComponent(calId);
   const futuros = CACHE.eventos.filter(function(e) { return e.data >= today() && !e._gcal; });
   for(let i = 0; i < Math.min(futuros.length, 10); i++) {
     const ev = futuros[i];
-    await gcalFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', { method: 'POST', body: JSON.stringify({ summary: ev.nome, location: ev.local || '', start: { date: ev.data }, end: { date: ev.data } }) });
+    await gcalFetch('https://www.googleapis.com/calendar/v3/calendars/' + encId + '/events', { method: 'POST', body: JSON.stringify({ summary: ev.nome, location: ev.local || '', start: { date: ev.data }, end: { date: ev.data } }) });
   }
 }
  
 async function addEventoToGcal(ev) {
   if(!gcalConnected || !gcalToken) return;
+  const calId   = await gcalCalendarId();
+  const encId   = encodeURIComponent(calId);
   const hasTime = ev.horario && ev.horario.length > 0;
-  await gcalFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', { method: 'POST', body: JSON.stringify({ summary: ev.nome, location: ev.local || '', start: hasTime ? { dateTime: ev.data + 'T' + ev.horario + ':00', timeZone: 'America/Sao_Paulo' } : { date: ev.data }, end: hasTime ? { dateTime: ev.data + 'T' + ev.horario + ':00', timeZone: 'America/Sao_Paulo' } : { date: ev.data } }) });
+  await gcalFetch('https://www.googleapis.com/calendar/v3/calendars/' + encId + '/events', { method: 'POST', body: JSON.stringify({ summary: ev.nome, location: ev.local || '', start: hasTime ? { dateTime: ev.data + 'T' + ev.horario + ':00', timeZone: 'America/Sao_Paulo' } : { date: ev.data }, end: hasTime ? { dateTime: ev.data + 'T' + ev.horario + ':00', timeZone: 'America/Sao_Paulo' } : { date: ev.data } }) });
 }
  
 window.addEventListener('load', function() {
