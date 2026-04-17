@@ -2318,18 +2318,33 @@ async function enviarZapSign(docId, evId) {
     const htmlDoc = gerarHtmlResumo(evId) || ('<html><body><h1>' + doc.nome + '</h1><p>Evento: ' + ev.nome + '</p><p>Cliente: ' + cli.nome + '</p></body></html>');
     const base64Doc = btoa(unescape(encodeURIComponent(htmlDoc)));
 
+    // Busca dados do dono (usuario logado) para segundo signatario
+    const { data: perfilDono } = await sb.from('perfis').select('*').eq('tipo','dono').single().catch(()=>({data:null}));
+    const donoNome  = perfilDono ? perfilDono.nome  : (currentUser ? currentUser.nome  : 'Santa Maria Buffet');
+    const donoEmail = perfilDono ? perfilDono.email : (currentUser ? currentUser.email : '');
+
     const payload = {
-      name: doc.nome + ' - ' + ev.nome,
-      lang: 'pt-BR',
-      base64_pdf: base64Doc,
-      signers: [{
-        name:             cli.nome,
-        email:            cli.email,
-        phone_country:    '55',
-        phone:            (cli.telefone||'').replace(/\D/g,''),
-        send_automatic_email: true,
-        send_automatic_whatsapp: !!(cli.telefone),
-      }],
+      name:        doc.nome + ' - ' + ev.nome,
+      lang:        'pt-BR',
+      sandbox:     false,
+      base64_pdf:  base64Doc,
+      signers: [
+        {
+          name:                    cli.nome,
+          email:                   cli.email,
+          phone_country:           '55',
+          phone:                   (cli.telefone||'').replace(/\D/g,''),
+          send_automatic_email:    true,
+          send_automatic_whatsapp: !!(cli.telefone),
+        },
+        {
+          name:                    donoNome,
+          email:                   donoEmail,
+          phone_country:           '55',
+          send_automatic_email:    !!(donoEmail),
+          send_automatic_whatsapp: false,
+        },
+      ],
     };
 
     const resp = await fetch('/api/zapsign?action=criar', {
