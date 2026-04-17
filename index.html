@@ -1194,9 +1194,6 @@ async function verEvento(id) {
       '</div>' +
     '</div>';
 
-  // Auto-check ZapSign signatures silently
-  setTimeout(function() { verificarZapSignAuto(docs, id); }, 800);
-
   // Tab behavior
   document.querySelectorAll('#ev-dtabs .tab').forEach(btn=>{
     btn.addEventListener('click',()=>{
@@ -1204,6 +1201,10 @@ async function verEvento(id) {
       document.querySelectorAll('[id^="ev-tab-"]').forEach(t=>t.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('ev-tab-'+btn.dataset.evTab).classList.add('active');
+      // Ao abrir aba de docs, verifica assinaturas silenciosamente
+      if(btn.dataset.evTab === 'docs') {
+        verificarZapSignAuto(docs, id);
+      }
     });
   });
 }
@@ -2424,11 +2425,11 @@ async function verificarZapSign(docId, evId, silencioso) {
         zapsign_url: pdfUrl,
       }).eq('id', docId);
       await loadAll();
-      verEvento(evId);
-      if(!silencioso) alert('Documento totalmente assinado!\n\n' + signerStatus + '\n\nPDF disponivel para download.');
+      if(!silencioso) {
+        alert('Documento totalmente assinado!\n\n' + signerStatus + '\n\nPDF disponivel para download.');
+        verEvento(evId);
+      }
     } else {
-      await loadAll();
-      verEvento(evId);
       if(!silencioso) alert('Assinaturas pendentes:\n\n' + signerStatus);
     }
     return { allSigned, signers };
@@ -2438,12 +2439,32 @@ async function verificarZapSign(docId, evId, silencioso) {
   }
 }
 
-// Verifica automaticamente todos os docs com zapsign_token pendentes ao abrir aba
+// Verifica automaticamente docs pendentes sem recarregar a tela
 async function verificarZapSignAuto(docs, evId) {
   const pendentes = (docs||[]).filter(function(d) { return !d.assinado && d.zapsign_token; });
   if(!pendentes.length) return;
+  var houveMudanca = false;
   for(var i=0; i<pendentes.length; i++) {
-    await verificarZapSign(pendentes[i].id, evId, true);
+    var d = pendentes[i];
+    try {
+      var resp = await fetch('/api/zapsign?action=status&token=' + d.zapsign_token);
+      if(!resp.ok) continue;
+      var result = await resp.json();
+      if(result.status === 'signed') {
+        var pdfUrl = result.signed_file || result.pdf_file || null;
+        await sb.from('evento_documentos').update({
+          assinado: true,
+          assinado_em: new Date().toISOString(),
+          zapsign_url: pdfUrl,
+        }).eq('id', d.id);
+        houveMudanca = true;
+      }
+    } catch(e) { /* silencioso */ }
+  }
+  // So recarrega se houve mudanca de status
+  if(houveMudanca) {
+    await loadAll();
+    verEvento(evId);
   }
 }
 
