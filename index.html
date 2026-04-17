@@ -942,26 +942,23 @@ function toggleNovoClienteInline() {
 async function salvarClienteInline() {
   const nome = document.getElementById('ev-cli-nome').value.trim();
   const tel  = document.getElementById('ev-cli-tel').value.trim();
+  const email = document.getElementById('ev-cli-email').value.trim();
+  const doc  = document.getElementById('ev-cli-doc').value.trim();
   if(!nome) { alert('Informe o nome do cliente.'); return; }
   const btn = document.querySelector('#novo-cli-inline .btn.bp');
   if(btn) { btn.textContent = 'Salvando...'; btn.disabled = true; }
-  try {
-    const { data, error } = await sb.from('clientes').insert({
-      nome,
-      telefone: tel,
-      email: document.getElementById('ev-cli-email').value.trim() || null,
-      cpf_cnpj: document.getElementById('ev-cli-doc').value.trim() || null,
-    }).select().single();
-    if(error) { alert('Erro ao salvar cliente: ' + error.message); return; }
-    await loadAll();
-    loadClientesSelect();
-    document.getElementById('ev-cliente').value = data.id;
-    toggleNovoClienteInline();
-  } catch(err) {
-    alert('Erro inesperado: ' + err.message);
-  } finally {
-    if(btn) { btn.textContent = 'Salvar e selecionar'; btn.disabled = false; }
-  }
+  const obj = { nome };
+  if(tel)   obj.telefone = tel;
+  if(email) obj.email    = email;
+  if(doc)   obj.cpf_cnpj = doc;
+  const { data, error } = await sb.from('clientes').insert(obj).select();
+  if(btn) { btn.textContent = 'Salvar e selecionar'; btn.disabled = false; }
+  if(error) { alert('Erro ao salvar cliente: ' + error.message); return; }
+  if(!data || !data.length) { alert('Erro: cliente nao foi retornado.'); return; }
+  await loadAll();
+  loadClientesSelect();
+  document.getElementById('ev-cliente').value = data[0].id;
+  toggleNovoClienteInline();
 }
 
 async function salvarEvento() {
@@ -1014,12 +1011,25 @@ function renderClientes() {
 }
 
 async function salvarCliente() {
-  const nome=document.getElementById('cli-nome').value.trim();
-  if(!nome){alert('Informe o nome do cliente.');return;}
-  const obj={nome,telefone:document.getElementById('cli-tel').value,email:document.getElementById('cli-email').value,cpf_cnpj:document.getElementById('cli-doc').value,endereco:document.getElementById('cli-end').value,obs:document.getElementById('cli-obs').value};
-  const {error}=await sb.from('clientes').insert(obj);
-  if(error){alert('Erro: '+error.message);return;}
+  const nome = document.getElementById('cli-nome').value.trim();
+  if(!nome) { alert('Informe o nome do cliente.'); return; }
+  const obj = { nome };
+  const tel = document.getElementById('cli-tel').value.trim();
+  const email = document.getElementById('cli-email').value.trim();
+  const doc = document.getElementById('cli-doc').value.trim();
+  const end = document.getElementById('cli-end').value.trim();
+  const obs = document.getElementById('cli-obs').value.trim();
+  if(tel)   obj.telefone = tel;
+  if(email) obj.email    = email;
+  if(doc)   obj.cpf_cnpj = doc;
+  if(end)   obj.endereco = end;
+  if(obs)   obj.obs      = obs;
+  const { error } = await sb.from('clientes').insert(obj);
+  if(error) { alert('Erro ao salvar cliente: ' + error.message); return; }
   closeModal('novoCliente');
+  ['cli-nome','cli-tel','cli-email','cli-doc','cli-end','cli-obs'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value = '';
+  });
   await loadAll();
   renderClientes();
   loadClientesSelect();
