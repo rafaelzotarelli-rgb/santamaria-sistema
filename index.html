@@ -2302,6 +2302,60 @@ function gerarDocumento(evId, template, titulo, skipOffer) {
 }
 
 
+// ── GERADOR DE PDF SIMPLES ────────────────────────────────────────
+function gerarPdfSimples(titulo, texto) {
+  // Gera um PDF minimo valido com o texto do documento
+  const linhas = texto.split('\n');
+  var y = 750;
+  var streams = [];
+  var streamContent = '';
+
+  streamContent += 'BT\n';
+  streamContent += '/F1 11 Tf\n';
+
+  linhas.forEach(function(linha) {
+    if(y < 50) { y = 750; }
+    var safe = linha
+      .replace(/\\/g, '\\\\')
+      .replace(/\(/g, '\\(')
+      .replace(/\)/g, '\\)')
+      .replace(/[\x00-\x1F]/g, ' ');
+    streamContent += '1 0 0 1 50 ' + y + ' Tm\n';
+    streamContent += '(' + safe + ') Tj\n';
+    y -= 16;
+  });
+
+  streamContent += 'ET\n';
+
+  var streamBytes = streamContent.length;
+
+  var pdf = '%PDF-1.4\n';
+  pdf += '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n';
+  pdf += '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n';
+  pdf += '3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842]\n';
+  pdf += '   /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n';
+  pdf += '4 0 obj\n<< /Length ' + streamBytes + ' >>\nstream\n';
+  pdf += streamContent;
+  pdf += '\nendstream\nendobj\n';
+  pdf += '5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n';
+  pdf += 'xref\n0 6\n';
+  pdf += '0000000000 65535 f \n';
+  pdf += '0000000009 00000 n \n';
+  pdf += '0000000058 00000 n \n';
+  pdf += '0000000115 00000 n \n';
+  pdf += '0000000266 00000 n \n';
+  pdf += '0000000' + String(400 + streamBytes).padStart(6,'0') + ' 00000 n \n';
+  pdf += 'trailer\n<< /Size 6 /Root 1 0 R >>\n';
+  pdf += 'startxref\n' + String(450 + streamBytes) + '\n%%EOF';
+
+  // Converte para base64
+  var bytes = '';
+  for(var i=0; i<pdf.length; i++) {
+    bytes += pdf[i];
+  }
+  return btoa(unescape(encodeURIComponent(bytes)));
+}
+
 // ── ZAPSIGN INTEGRATION ───────────────────────────────────────────
 async function enviarZapSign(docId, evId) {
   const ev  = CACHE.eventos.find(e=>e.id===evId); if(!ev) return;
@@ -2319,21 +2373,38 @@ async function enviarZapSign(docId, evId) {
   if(btn) { btn.textContent = 'Enviando...'; btn.disabled = true; }
 
   try {
-    // Gera HTML do documento para enviar ao ZapSign
-    const htmlDoc = gerarHtmlResumo(evId) || ('<html><body><h1>' + doc.nome + '</h1><p>Evento: ' + ev.nome + '</p><p>Cliente: ' + cli.nome + '</p></body></html>');
-    const base64Doc = btoa(unescape(encodeURIComponent(htmlDoc)));
-
-    // Busca dados do dono (usuario logado) para segundo signatario
-    let perfilDono = null;
-    try { const r = await sb.from('perfis').select('*').eq('tipo','dono').limit(1); perfilDono = r.data && r.data[0]; } catch(e) {}
-    const donoNome  = perfilDono ? perfilDono.nome  : (currentUser ? currentUser.nome  : 'Santa Maria Buffet');
-    const donoEmail = perfilDono ? perfilDono.email : (currentUser ? currentUser.email : '');
+    // Gera PDF do documento para enviar ao ZapSign
+    const svcsZ   = (CACHE.eventoServicos||[]).filter(s=>s.evento_id===evId);
+    const pagsZ   = CACHE.lancamentos.filter(l=>l.evento_id===evId&&l.tipo==='receita');
+    const valZ    = calcValorContrato(evId);
+    const pagoZ   = pagsZ.reduce((a,p)=>a+Number(p.valor),0);
+    const saldoZ  = Math.max(0, valZ - pagoZ);
+    const itensZ  = svcsZ.map(s=>'- '+s.descricao+' '+fmtMoney(s.valor)).join('\n') || '(nenhum item)';
+    const pagsStrZ = pagsZ.map(p=>fmtDate(p.data)+' '+fmtMoney(p.valor)).join('\n') || '(nenhum pagamento)';
+    const textoZ  = [
+      'RESUMO FINANCEIRO DO CONTRATO',
+      'Santa Maria Buffet & Eventos  -  Emitido: '+new Date().toLocaleDateString('pt-BR'),
+      '',
+      'EVENTO: '+ev.nome,
+      'Data: '+fmtDate(ev.data)+(ev.horario?' as '+ev.horario.slice(0,5):'')+' | Local: '+(ev.local||'-')+' | '+ev.convidados+' convidados',
+      'Cliente: '+cli.nome+(cli.telefone?' | '+cli.telefone:'')+(cli.email?' | '+cli.email:''),
+      '',
+      'SERVICOS E PRODUTOS:',
+      itensZ,
+      '',
+      'RESUMO FINANCEIRO:',
+      'Valor total: '+fmtMoney(valZ)+'  |  Total recebido: '+fmtMoney(pagoZ)+'  |  Saldo em aberto: '+fmtMoney(saldoZ),
+      '',
+      'PAGAMENTOS:',
+      pagsStrZ,
+    ].join('\n');
+    const pdfContent = gerarPdfSimples(doc.nome+' - '+ev.nome, textoZ);
 
     const payload = {
       name:        doc.nome + ' - ' + ev.nome,
       lang:        'pt-BR',
       sandbox:     false,
-      base64_pdf:  base64Doc,
+      base64_pdf:  pdfContent,
       signers: [
         {
           name:                    cli.nome,
