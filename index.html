@@ -2301,56 +2301,49 @@ function gerarDocumento(evId, template, titulo, skipOffer) {
 
 // ── GERADOR DE PDF SIMPLES ────────────────────────────────────────
 function gerarPdfSimples(titulo, texto) {
-  // Gera um PDF minimo valido com o texto do documento
-  const linhas = texto.split('\n');
-  var y = 750;
-  var streams = [];
-  var streamContent = '';
-
-  streamContent += 'BT\n';
-  streamContent += '/F1 11 Tf\n';
-
-  linhas.forEach(function(linha) {
-    if(y < 50) { y = 750; }
-    var safe = linha
-      .replace(/\\/g, '\\\\')
-      .replace(/\(/g, '\\(')
-      .replace(/\)/g, '\\)')
-      .replace(/[\x00-\x1F]/g, ' ');
-    streamContent += '1 0 0 1 50 ' + y + ' Tm\n';
-    streamContent += '(' + safe + ') Tj\n';
-    y -= 16;
-  });
-
-  streamContent += 'ET\n';
-
-  var streamBytes = streamContent.length;
-
-  var pdf = '%PDF-1.4\n';
-  pdf += '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n';
-  pdf += '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n';
-  pdf += '3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842]\n';
-  pdf += '   /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n';
-  pdf += '4 0 obj\n<< /Length ' + streamBytes + ' >>\nstream\n';
-  pdf += streamContent;
-  pdf += '\nendstream\nendobj\n';
-  pdf += '5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n';
-  pdf += 'xref\n0 6\n';
-  pdf += '0000000000 65535 f \n';
-  pdf += '0000000009 00000 n \n';
-  pdf += '0000000058 00000 n \n';
-  pdf += '0000000115 00000 n \n';
-  pdf += '0000000266 00000 n \n';
-  pdf += '0000000' + String(400 + streamBytes).padStart(6,'0') + ' 00000 n \n';
-  pdf += 'trailer\n<< /Size 6 /Root 1 0 R >>\n';
-  pdf += 'startxref\n' + String(450 + streamBytes) + '\n%%EOF';
-
-  // Converte para base64
-  var bytes = '';
-  for(var i=0; i<pdf.length; i++) {
-    bytes += pdf[i];
+  // Remove acentos e caracteres especiais para compatibilidade com PDF/base64
+  function sanitize(str) {
+    return (str||'')
+      .replace(/[\u00C0-\u00C5]/g,'A').replace(/[\u00E0-\u00E5]/g,'a')
+      .replace(/[\u00C7]/g,'C').replace(/[\u00E7]/g,'c')
+      .replace(/[\u00C8-\u00CB]/g,'E').replace(/[\u00E8-\u00EB]/g,'e')
+      .replace(/[\u00CC-\u00CF]/g,'I').replace(/[\u00EC-\u00EF]/g,'i')
+      .replace(/[\u00D2-\u00D6]/g,'O').replace(/[\u00F2-\u00F6]/g,'o')
+      .replace(/[\u00D9-\u00DC]/g,'U').replace(/[\u00F9-\u00FC]/g,'u')
+      .replace(/[\u00D1]/g,'N').replace(/[\u00F1]/g,'n')
+      .replace(/[^\x20-\x7E]/g,'?')
+      .replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)');
   }
-  return btoa(unescape(encodeURIComponent(bytes)));
+
+  const linhas = texto.split('\n');
+  var y = 800;
+  var stream = 'BT\n/F1 10 Tf\n';
+  linhas.forEach(function(linha) {
+    if(y < 40) y = 800;
+    stream += '50 ' + y + ' Td\n(' + sanitize(linha) + ') Tj\n0 -14 Td\n';
+    y -= 14;
+  });
+  stream += 'ET';
+
+  var len = stream.length;
+  var pdf = '%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj\n4 0 obj<</Length ' + len + '>>\nstream\n' + stream + '\nendstream\nendobj\n5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj\nxref\n0 6\n0000000000 65535 f \n0000000009 00000 n \n0000000052 00000 n \n0000000101 00000 n \n0000000230 00000 n \n0000000' + String(280+len).padStart(6,'0') + ' 00000 n \ntrailer<</Size 6/Root 1 0 R>>\nstartxref\n' + String(330+len) + '\n%%EOF';
+
+  // Encode to base64 safely (ASCII only at this point)
+  try {
+    return btoa(pdf);
+  } catch(e) {
+    // Fallback: encode char by char
+    var result = '';
+    var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    var i = 0;
+    while(i < pdf.length) {
+      var a = pdf.charCodeAt(i++)||0;
+      var b = pdf.charCodeAt(i++)||0;
+      var c = pdf.charCodeAt(i++)||0;
+      result += chars[a>>2] + chars[((a&3)<<4)|(b>>4)] + chars[((b&15)<<2)|(c>>6)] + chars[c&63];
+    }
+    return result;
+  }
 }
 
 // ── ZAPSIGN INTEGRATION ───────────────────────────────────────────
