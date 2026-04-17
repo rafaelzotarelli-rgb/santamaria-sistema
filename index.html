@@ -465,7 +465,7 @@ textarea.fi{resize:vertical;min-height:64px}
 </div>
 
 <!-- ── MODAIS ── -->
-<div class="moverlay" id="modal-novoEvento"><div class="modal">
+<div class="moverlay" id="modal-novoEvento"><div class="modal" style="max-height:90vh;overflow-y:auto">
   <div class="mtitle">Novo Evento<button class="mclose" onclick="closeModal('novoEvento')">✕</button></div>
   <div class="fgrid2"><div class="fg"><label class="fl">Nome do evento *</label><input class="fi" id="ev-nome" placeholder="Casamento Silva & Costa"></div><div class="fg"><label class="fl">Tipo</label><select class="fi" id="ev-tipo"><option>Casamento</option><option>Bodas</option><option>Aniversário</option><option>Corporativo</option><option>Outro</option></select></div></div>
   <div class="fgrid3"><div class="fg"><label class="fl">Data *</label><input class="fi" type="date" id="ev-data"></div><div class="fg"><label class="fl">Horário</label><input class="fi" type="time" id="ev-hora" value="19:00"></div><div class="fg"><label class="fl">Convidados</label><input class="fi" type="number" id="ev-conv" placeholder="150" min="0"></div></div>
@@ -493,7 +493,7 @@ textarea.fi{resize:vertical;min-height:64px}
     </div>
   </div>
   <div class="fg"><label class="fl">Observações</label><textarea class="fi" id="ev-obs" placeholder="Detalhes especiais..."></textarea></div>
-  <div class="mfoot"><button class="btn bsec" onclick="closeModal('novoEvento')">Cancelar</button><button class="btn bp" onclick="salvarEvento()">Salvar Evento</button></div>
+  <div class="mfoot"><button type="button" class="btn bsec" onclick="closeModal('novoEvento')">Cancelar</button><button type="button" class="btn bp" onclick="salvarEvento()">Salvar Evento</button></div>
 </div></div>
 
 <div class="moverlay" id="modal-novoCliente"><div class="modal modal-sm">
