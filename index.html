@@ -2319,7 +2319,8 @@ async function enviarZapSign(docId, evId) {
     const base64Doc = btoa(unescape(encodeURIComponent(htmlDoc)));
 
     // Busca dados do dono (usuario logado) para segundo signatario
-    const { data: perfilDono } = await sb.from('perfis').select('*').eq('tipo','dono').single().catch(()=>({data:null}));
+    let perfilDono = null;
+    try { const r = await sb.from('perfis').select('*').eq('tipo','dono').limit(1); perfilDono = r.data && r.data[0]; } catch(e) {}
     const donoNome  = perfilDono ? perfilDono.nome  : (currentUser ? currentUser.nome  : 'Santa Maria Buffet');
     const donoEmail = perfilDono ? perfilDono.email : (currentUser ? currentUser.email : '');
 
