@@ -22,12 +22,12 @@
   --sidebar:220px;
 }
 body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--dark);font-size:14px;min-height:100vh}
- 
+
 /* ── LOADING ── */
 #loading{position:fixed;inset:0;background:var(--cream);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;z-index:999}
 .spin{width:32px;height:32px;border:2px solid var(--rose-l);border-top-color:var(--rose-d);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
- 
+
 /* ── LOGIN ── */
 #login-screen{min-height:100vh;display:none;align-items:center;justify-content:center;background:linear-gradient(135deg,#faf8f5,#f5e8e9,#fdf6e3)}
 .lcard{background:var(--white);border-radius:20px;padding:48px 40px;width:380px;border:.5px solid var(--border);text-align:center;box-shadow:0 8px 40px rgba(44,35,32,.08)}
@@ -38,11 +38,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--dark);
 .lbtn{width:100%;padding:12px;background:var(--rose-d);color:white;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background .2s;margin-top:4px}
 .lbtn:hover{background:var(--rose)}
 .lerr{font-size:12px;color:var(--danger);margin-top:8px;min-height:18px}
- 
+
 /* ── APP ── */
 #app{display:none;min-height:100vh}
 .layout{display:flex;min-height:100vh}
- 
+
 /* ── SIDEBAR ── */
 .sidebar{width:var(--sidebar);background:var(--white);border-right:.5px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;overflow-y:auto}
 .slogo{padding:20px 18px 14px;border-bottom:.5px solid var(--border)}
@@ -61,7 +61,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--dark);
 .srole{font-size:10px;color:var(--muted)}
 .logoutb{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;padding:3px;border-radius:4px;transition:color .2s}
 .logoutb:hover{color:var(--danger)}
- 
+
 /* ── MAIN ── */
 .main{margin-left:var(--sidebar);flex:1;padding:28px 28px 64px;max-width:calc(100vw - var(--sidebar))}
 .page{display:none}
@@ -69,11 +69,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--dark);
 .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
 .ptitle{font-family:'Playfair Display',serif;font-size:21px;font-weight:500;color:var(--dark)}
 .psub{font-size:12px;color:var(--muted);margin-top:2px}
- 
+
 /* ── CARDS ── */
 .card{background:var(--white);border-radius:14px;padding:20px 22px;border:.5px solid var(--border);margin-bottom:16px}
 .ctitle{font-family:'Playfair Display',serif;font-size:15px;font-weight:500;color:var(--dark);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
- 
+
 /* ── STATS ── */
 .sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
 .sc{background:var(--white);border-radius:12px;padding:16px 18px;border:.5px solid var(--border)}
@@ -83,7 +83,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--dark);
 .smeta.up{color:var(--success)}
 .smeta.wr{color:var(--warn)}
 .smeta.dn{color:var(--danger)}
- 
+
 /* ── TABLE ── */
 .table-wrap{overflow-x:auto;border-radius:10px;border:.5px solid var(--border)}
 table{width:100%;border-collapse:collapse;min-width:500px}
@@ -91,7 +91,7 @@ th{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)
 td{padding:11px 12px;border-bottom:.5px solid var(--border);font-size:13px;color:var(--dark);vertical-align:middle}
 tr:last-child td{border-bottom:none}
 tbody tr:hover td{background:var(--cream)}
- 
+
 /* ── BADGES ── */
 .badge{display:inline-flex;align-items:center;gap:3px;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
 .bs{background:var(--success-bg);color:var(--success)}
@@ -101,7 +101,7 @@ tbody tr:hover td{background:var(--cream)}
 .bn{background:#f0eeeb;color:var(--muted)}
 .bg{background:var(--rose-l);color:var(--rose-d)}
 .bgold{background:var(--gold-l);color:var(--gold-d)}
- 
+
 /* ── BUTTONS ── */
 .btn{padding:8px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;border:none;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .bp{background:var(--rose-d);color:white}.bp:hover{background:var(--rose)}
@@ -110,7 +110,7 @@ tbody tr:hover td{background:var(--cream)}
 .bwa{background:#e8fdf0;color:#25d366;border:.5px solid #25d366}.bwa:hover{background:#25d366;color:white}
 .bsm{padding:5px 11px;font-size:11px;border-radius:6px}
 .btn:disabled{opacity:.5;cursor:not-allowed}
- 
+
 /* ── FORM ── */
 .fg{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
 .fl{font-size:11px;color:var(--muted);font-weight:500}
@@ -120,7 +120,7 @@ select.fi{appearance:none;cursor:pointer}
 textarea.fi{resize:vertical;min-height:64px}
 .fgrid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .fgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
- 
+
 /* ── MODAL ── */
 .moverlay{position:fixed;inset:0;background:rgba(44,35,32,.4);display:none;align-items:center;justify-content:center;z-index:200;padding:20px;overflow-y:auto}
 .moverlay.open{display:flex}
@@ -130,13 +130,13 @@ textarea.fi{resize:vertical;min-height:64px}
 .mclose{background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px;line-height:1;padding:2px}
 .mclose:hover{color:var(--danger)}
 .mfoot{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:.5px solid var(--border)}
- 
+
 /* ── TABS ── */
 .tabs{display:flex;border-bottom:.5px solid var(--border);margin-bottom:18px;gap:0;overflow-x:auto}
 .tab{padding:9px 16px;font-size:12px;font-weight:500;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none;font-family:'DM Sans',sans-serif}
 .tab.active{color:var(--rose-d);border-bottom-color:var(--rose)}
 .tabcontent{display:none}.tabcontent.active{display:block}
- 
+
 /* ── FUNIL ── */
 .funnel{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
 .fcol{background:var(--cream);border-radius:12px;padding:10px;min-height:160px}
@@ -145,7 +145,7 @@ textarea.fi{resize:vertical;min-height:64px}
 .fcard:hover{border-color:var(--rose)}
 .fcard.alerta{border-color:var(--danger);background:var(--danger-bg)}
 .fcard.alerta-w{border-color:var(--warn);background:var(--warn-bg)}
- 
+
 /* ── CALENDAR ── */
 .cal-grid-hdr{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
 .cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
@@ -161,15 +161,15 @@ textarea.fi{resize:vertical;min-height:64px}
 .cev.realizado{background:var(--success-bg);color:var(--success)}
 .cev.outro{background:var(--gold-l);color:var(--gold-d)}
 .cev.gcal{background:var(--info-bg);color:var(--info)}
- 
+
 /* ── UPLOAD ── */
 .uparea{border:1.5px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;background:var(--cream)}
 .uparea:hover{border-color:var(--rose);background:var(--rose-l)}
- 
+
 /* ── PROGRESS ── */
 .pbar{height:5px;background:var(--cream);border-radius:3px;overflow:hidden}
 .pfill{height:100%;border-radius:3px;background:var(--rose);transition:width .3s}
- 
+
 /* ── MISC ── */
 .divider{height:.5px;background:var(--border);margin:14px 0}
 .empty{text-align:center;padding:40px;color:var(--muted);font-size:13px}
@@ -186,13 +186,13 @@ textarea.fi{resize:vertical;min-height:64px}
 </style>
 </head>
 <body>
- 
+
 <!-- LOADING -->
 <div id="loading">
   <div style="font-family:'Playfair Display',serif;font-size:22px;color:var(--rose-d)">✦ Santa Maria Buffet</div>
   <div class="spin"></div>
 </div>
- 
+
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="lcard">
@@ -207,11 +207,11 @@ textarea.fi{resize:vertical;min-height:64px}
     <div style="margin-top:16px;font-size:11px;color:var(--muted)">buffetsantamaria.com.br</div>
   </div>
 </div>
- 
+
 <!-- APP -->
 <div id="app">
  <div class="layout">
- 
+
   <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="slogo">
@@ -242,10 +242,10 @@ textarea.fi{resize:vertical;min-height:64px}
       <button class="logoutb" onclick="doLogout()" title="Sair">✕</button>
     </div>
   </aside>
- 
+
   <!-- MAIN -->
   <main class="main">
- 
+
     <!-- ── DASHBOARD ── -->
     <div class="page" id="page-dashboard">
       <div class="topbar">
@@ -269,35 +269,77 @@ textarea.fi{resize:vertical;min-height:64px}
         </div>
       </div>
     </div>
- 
+
     <!-- ── AGENDA ── -->
     <div class="page" id="page-agenda">
       <div class="topbar">
-        <div><div class="ptitle">Agenda</div><div class="psub">Calendário sincronizado com Google Agenda.</div></div>
+        <div><div class="ptitle">Agenda</div><div class="psub">Visualização direta do Google Agenda.</div></div>
         <div style="display:flex;gap:8px">
-          <button class="btn bsec" id="btn-gcal-connect" onclick="connectGoogle()">🔗 Conectar Google Agenda</button>
+          <button class="btn bsec" id="btn-gcal-connect" onclick="connectGoogle()">🔗 Sincronizar eventos</button>
           <button class="btn bsec" id="btn-gcal-disconnect" style="display:none" onclick="disconnectGoogle()">✕ Desconectar</button>
           <button class="btn bp" onclick="openModal('novoEvento')">+ Novo Evento</button>
         </div>
       </div>
       <div id="gcal-status-bar" style="display:none;align-items:center;gap:10px;padding:10px 16px;border-radius:10px;background:var(--success-bg);border:.5px solid var(--success);margin-bottom:14px;font-size:13px;color:var(--success)"></div>
-      <div class="card" style="padding:0;overflow:hidden;width:100%">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:.5px solid var(--border)">
-          <button class="btn bsec bsm" onclick="calNav(-1)">‹</button>
-          <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:500" id="cal-label"></div>
-          <button class="btn bsec bsm" onclick="calNav(1)">›</button>
+
+      <div id="gcal-setup-card" class="card">
+        <div class="ctitle">Configurar visualização da agenda</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">
+          Para exibir sua agenda aqui, você precisa copiar o link de incorporação da agenda <strong>Eventos Buffet Santa Maria</strong> no Google Agenda.
         </div>
-        <div style="width:100%;overflow:hidden">
-          <div class="cal-grid-hdr" id="cal-hdr"></div>
-          <div class="cal-grid" id="cal-grid"></div>
+        <div style="display:flex;flex-direction:column;gap:12px;background:var(--cream);border-radius:10px;padding:16px;margin-bottom:16px;font-size:13px">
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div style="width:22px;height:22px;border-radius:50%;background:var(--rose-l);color:var(--rose-d);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0">1</div>
+            <div>Acesse <strong>calendar.google.com</strong> no computador</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div style="width:22px;height:22px;border-radius:50%;background:var(--rose-l);color:var(--rose-d);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0">2</div>
+            <div>No menu esquerdo, passe o mouse sobre <strong>Eventos Buffet Santa Maria</strong> → clique nos <strong>três pontinhos (⋮)</strong></div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div style="width:22px;height:22px;border-radius:50%;background:var(--rose-l);color:var(--rose-d);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0">3</div>
+            <div>Clique em <strong>"Configurações e compartilhamento"</strong></div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div style="width:22px;height:22px;border-radius:50%;background:var(--rose-l);color:var(--rose-d);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0">4</div>
+            <div>Role até a seção <strong>"Integrar agenda"</strong> → copie o campo <strong>"URL pública desta agenda"</strong> (começa com <code style="background:var(--info-bg);color:var(--info);padding:1px 5px;border-radius:4px">https://calendar.google.com/calendar/ical/...</code>)</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div style="width:22px;height:22px;border-radius:50%;background:var(--rose-l);color:var(--rose-d);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0">5</div>
+            <div>Cole o link abaixo e clique em <strong>Salvar e exibir</strong></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="fi" id="gcal-embed-url" placeholder="Cole aqui a URL pública da agenda..." style="flex:1">
+          <button class="btn bp" onclick="salvarEmbedUrl()">Salvar e exibir</button>
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:var(--muted)">
+          ⚠ A agenda precisa estar configurada como <strong>pública</strong> para aparecer aqui. Na mesma tela de configurações, em <strong>"Permissões de acesso"</strong>, marque <strong>"Tornar disponível ao público"</strong>.
         </div>
       </div>
-      <div class="card" style="margin-top:14px">
-        <div class="ctitle">Eventos do Google Agenda <span id="gcal-sync-badge" class="badge bn" style="font-size:11px">Não conectado</span></div>
-        <div id="gcal-events-list"><div class="empty">Conecte o Google Agenda para ver os eventos aqui.</div></div>
+
+      <div id="gcal-iframe-wrap" style="display:none">
+        <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+          <select class="fi" id="gcal-view-sel" onchange="updateIframe()" style="width:160px">
+            <option value="WEEK">Semana</option>
+            <option value="MONTH" selected>Mês</option>
+            <option value="AGENDA">Lista</option>
+            <option value="DAY">Dia</option>
+          </select>
+          <button class="btn bsec bsm" onclick="document.getElementById('gcal-setup-card').style.display='block';document.getElementById('gcal-iframe-wrap').style.display='none'">⚙ Reconfigurar</button>
+          <a id="gcal-open-link" href="https://calendar.google.com" target="_blank" class="btn bsec bsm">↗ Abrir no Google</a>
+        </div>
+        <div style="background:var(--white);border-radius:14px;border:.5px solid var(--border);overflow:hidden;width:100%">
+          <iframe id="gcal-iframe"
+            src=""
+            style="width:100%;height:680px;border:none;display:block"
+            frameborder="0"
+            scrolling="no">
+          </iframe>
+        </div>
       </div>
     </div>
- 
+
     <!-- ── EVENTOS ── -->
     <div class="page" id="page-eventos">
       <div id="ev-lista-view">
@@ -318,7 +360,7 @@ textarea.fi{resize:vertical;min-height:64px}
       </div>
       <div id="ev-detalhe-view" style="display:none"></div>
     </div>
- 
+
     <!-- ── ORÇAMENTOS ── -->
     <div class="page" id="page-orcamentos">
       <div class="topbar">
@@ -340,7 +382,7 @@ textarea.fi{resize:vertical;min-height:64px}
       <div class="tabcontent" id="orc-tab-historico"><div class="card"><div class="ctitle">Histórico de contatos<button class="btn bsec bsm" onclick="openModal('novoContato')">+ Registrar</button></div><div id="hist-list"></div></div></div>
       <div class="tabcontent" id="orc-tab-lista"><div class="card" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Tipo</th><th>Data</th><th class="fin-only">Valor</th><th>Etapa</th><th>Último contato</th><th></th></tr></thead><tbody id="orc-tbody"></tbody></table></div></div></div>
     </div>
- 
+
     <!-- ── CLIENTES ── -->
     <div class="page" id="page-clientes">
       <div class="topbar">
@@ -352,7 +394,7 @@ textarea.fi{resize:vertical;min-height:64px}
         <tbody id="cli-tbody"></tbody></table>
       </div></div>
     </div>
- 
+
     <!-- ── SERVIÇOS ── -->
     <div class="page" id="page-servicos">
       <div class="topbar">
@@ -365,7 +407,7 @@ textarea.fi{resize:vertical;min-height:64px}
         <tbody id="svc-tbody"></tbody></table>
       </div></div>
     </div>
- 
+
     <!-- ── FINANCEIRO ── -->
     <div class="page fin-only" id="page-financeiro">
       <div class="topbar">
@@ -378,7 +420,7 @@ textarea.fi{resize:vertical;min-height:64px}
         <div class="card"><div class="ctitle">Últimos lançamentos</div><div id="fin-lanc-list"></div></div>
       </div>
     </div>
- 
+
     <!-- ── CONCILIAÇÃO ── -->
     <div class="page fin-only" id="page-conciliacao">
       <div class="topbar"><div><div class="ptitle">Conciliação OFX</div><div class="psub">Importe o extrato e bata com os lançamentos.</div></div></div>
@@ -393,7 +435,7 @@ textarea.fi{resize:vertical;min-height:64px}
         <div id="ofx-result" style="display:none;margin-top:16px"></div>
       </div>
     </div>
- 
+
     <!-- ── IMPORTADOR ── -->
     <div class="page" id="page-importador">
       <div class="topbar"><div><div class="ptitle">Importar dados</div><div class="psub">Traga seus dados do ME Eventos para o Santa Maria.</div></div></div>
@@ -409,7 +451,7 @@ textarea.fi{resize:vertical;min-height:64px}
         <div id="import-area" style="margin-top:16px"></div>
       </div>
     </div>
- 
+
     <!-- ── RELATÓRIOS ── -->
     <div class="page fin-only" id="page-relatorios">
       <div class="topbar"><div><div class="ptitle">Relatórios</div><div class="psub">Visão gerencial do negócio.</div></div></div>
@@ -417,11 +459,11 @@ textarea.fi{resize:vertical;min-height:64px}
       <div class="card"><div class="ctitle">Faturamento mensal</div><div style="display:flex;align-items:flex-end;gap:6px;height:80px" id="rel-chart"></div><div style="display:flex;gap:0;margin-top:6px" id="rel-chart-labels"></div></div>
       <div class="card"><div class="ctitle">Resumo por evento</div><div class="table-wrap"><table><thead><tr><th>Evento</th><th>Data</th><th>Convidados</th><th>Valor</th><th>Recebido</th><th>Status</th></tr></thead><tbody id="rel-tbody"></tbody></table></div></div>
     </div>
- 
+
   </main>
  </div>
 </div>
- 
+
 <!-- ── MODAIS ── -->
 <div class="moverlay" id="modal-novoEvento"><div class="modal">
   <div class="mtitle">Novo Evento<button class="mclose" onclick="closeModal('novoEvento')">✕</button></div>
@@ -432,7 +474,7 @@ textarea.fi{resize:vertical;min-height:64px}
   <div class="fg"><label class="fl">Observações</label><textarea class="fi" id="ev-obs" placeholder="Detalhes especiais..."></textarea></div>
   <div class="mfoot"><button class="btn bsec" onclick="closeModal('novoEvento')">Cancelar</button><button class="btn bp" onclick="salvarEvento()">Salvar Evento</button></div>
 </div></div>
- 
+
 <div class="moverlay" id="modal-novoCliente"><div class="modal modal-sm">
   <div class="mtitle">Novo Cliente<button class="mclose" onclick="closeModal('novoCliente')">✕</button></div>
   <div class="fgrid2"><div class="fg"><label class="fl">Nome completo *</label><input class="fi" id="cli-nome" placeholder="Nome"></div><div class="fg"><label class="fl">CPF / CNPJ</label><input class="fi" id="cli-doc" placeholder="000.000.000-00"></div></div>
@@ -441,7 +483,7 @@ textarea.fi{resize:vertical;min-height:64px}
   <div class="fg"><label class="fl">Observações</label><textarea class="fi" id="cli-obs" rows="2"></textarea></div>
   <div class="mfoot"><button class="btn bsec" onclick="closeModal('novoCliente')">Cancelar</button><button class="btn bp" onclick="salvarCliente()">Salvar</button></div>
 </div></div>
- 
+
 <div class="moverlay" id="modal-novoOrc"><div class="modal modal-sm">
   <div class="mtitle">Nova Proposta<button class="mclose" onclick="closeModal('novoOrc')">✕</button></div>
   <div class="fgrid2"><div class="fg"><label class="fl">Nome do cliente *</label><input class="fi" id="orc-cli"></div><div class="fg"><label class="fl">Telefone (WhatsApp)</label><input class="fi" id="orc-tel" placeholder="(11) 99999-9999"></div></div>
@@ -451,7 +493,7 @@ textarea.fi{resize:vertical;min-height:64px}
   <div class="fg"><label class="fl">Observações</label><textarea class="fi" id="orc-obs" rows="2"></textarea></div>
   <div class="mfoot"><button class="btn bsec" onclick="closeModal('novoOrc')">Cancelar</button><button class="btn bp" onclick="salvarOrc()">Salvar & Agendar Follow-up</button></div>
 </div></div>
- 
+
 <div class="moverlay" id="modal-novoFollowup"><div class="modal modal-sm">
   <div class="mtitle">Agendar Follow-up<button class="mclose" onclick="closeModal('novoFollowup')">✕</button></div>
   <div class="fg"><label class="fl">Orçamento / Cliente</label><select class="fi" id="fu-orc"></select></div>
@@ -461,7 +503,7 @@ textarea.fi{resize:vertical;min-height:64px}
   <div class="fg"><label class="fl">Mensagem sugerida (WhatsApp)</label><textarea class="fi" id="fu-msg" rows="3"></textarea></div>
   <div class="mfoot"><button class="btn bsec" onclick="closeModal('novoFollowup')">Cancelar</button><button class="btn bp" onclick="salvarFollowup()">Agendar</button></div>
 </div></div>
- 
+
 <div class="moverlay" id="modal-novoContato"><div class="modal modal-sm">
   <div class="mtitle">Registrar Contato<button class="mclose" onclick="closeModal('novoContato')">✕</button></div>
   <div class="fg"><label class="fl">Orçamento / Cliente</label><select class="fi" id="cont-orc"></select></div>
@@ -471,7 +513,7 @@ textarea.fi{resize:vertical;min-height:64px}
   <div class="fg"><label class="fl">Agendar próximo follow-up em</label><select class="fi" id="cont-prox"><option value="0">Não agendar</option><option value="2">2 dias</option><option value="3" selected>3 dias</option><option value="5">5 dias</option><option value="7">7 dias</option><option value="14">14 dias</option></select></div>
   <div class="mfoot"><button class="btn bsec" onclick="closeModal('novoContato')">Cancelar</button><button class="btn bp" onclick="salvarContato()">Registrar</button></div>
 </div></div>
- 
+
 <div class="moverlay" id="modal-novoProduto"><div class="modal">
   <div class="mtitle">Novo Item / Serviço<button class="mclose" onclick="closeModal('novoProduto')">✕</button></div>
   <div class="fgrid2"><div class="fg"><label class="fl">Nome *</label><input class="fi" id="prod-nome" placeholder="Ex: Buffet jantar completo"></div><div class="fg"><label class="fl">Categoria</label><select class="fi" id="prod-cat"><option value="buffet">🍽 Buffet</option><option value="bebidas">🥂 Bebidas</option><option value="sobremesas">🎂 Sobremesas</option><option value="entrada">🥗 Entradas</option><option value="decoracao">💐 Decoração</option><option value="musica">🎵 Música / DJ</option><option value="foto">📷 Foto & Vídeo</option><option value="cerimonial">🎀 Cerimonial</option><option value="outros">📦 Outros</option></select></div></div>
@@ -486,7 +528,7 @@ textarea.fi{resize:vertical;min-height:64px}
   <div class="fg"><label class="fl">Observações / Variações</label><input class="fi" id="prod-obs"></div>
   <div class="mfoot"><button class="btn bsec" onclick="closeModal('novoProduto')">Cancelar</button><button class="btn bp" onclick="salvarProduto()">Salvar</button></div>
 </div></div>
- 
+
 <div class="moverlay" id="modal-novoLanc"><div class="modal modal-sm">
   <div class="mtitle">Novo Lançamento<button class="mclose" onclick="closeModal('novoLanc')">✕</button></div>
   <div class="fgrid2"><div class="fg"><label class="fl">Tipo</label><select class="fi" id="lanc-tipo"><option value="receita">Receita</option><option value="despesa">Despesa</option></select></div><div class="fg"><label class="fl">Conta</label><select class="fi" id="lanc-conta"></select></div></div>
@@ -496,7 +538,7 @@ textarea.fi{resize:vertical;min-height:64px}
   <div class="fg"><label class="fl">Observação</label><input class="fi" id="lanc-obs"></div>
   <div class="mfoot"><button class="btn bsec" onclick="closeModal('novoLanc')">Cancelar</button><button class="btn bp" onclick="salvarLanc()">Salvar</button></div>
 </div></div>
- 
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════════════
@@ -505,7 +547,7 @@ textarea.fi{resize:vertical;min-height:64px}
 const SUPABASE_URL = 'https://zdfhyrqbpruxpjnvzbmr.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkZmh5cnFicHJ1eHBqbnZ6Ym1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0MTY3NDYsImV4cCI6MjA5MTk5Mjc0Nn0.cKVvlhiBjJWKoroGthEwsE6F69LgzE_PmhAczEVzRu4';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
- 
+
 // ── HELPERS ──────────────────────────────────────────────────────
 const today = () => new Date().toISOString().split('T')[0];
 const daysFrom = n => { const d=new Date(); d.setDate(d.getDate()+n); return d.toISOString().split('T')[0]; };
@@ -513,7 +555,7 @@ const diffDays = iso => Math.round((new Date()-new Date(iso+'T12:00:00'))/(864e5
 const fmtDate = iso => iso ? new Date(iso+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}) : '—';
 const fmtMoney = v => 'R$'+(Number(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
 const ini = str => str?.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase()||'?';
- 
+
 const STATUS_MAP = {confirmado:{l:'Confirmado',c:'bi'},realizado:{l:'Realizado',c:'bs'},pendente:{l:'Pendente',c:'bw'},cancelado:{l:'Cancelado',c:'bd'}};
 const ETAPA_MAP  = {lead:{l:'Lead',c:'bi'},proposta:{l:'Proposta',c:'bw'},negociacao:{l:'Negociação',c:'bg'},fechado:{l:'Fechado',c:'bs'}};
 const CANAL_ICON = {whatsapp:'💬',ligacao:'📞',reuniao:'🤝',email:'✉'};
@@ -522,16 +564,16 @@ const ALERG_LIST = ['Glúten','Lactose','Ovos','Frutos do mar','Amendoim','Soja'
 const CAT_ICONS  = {buffet:'🍽',bebidas:'🥂',sobremesas:'🎂',entrada:'🥗',decoracao:'💐',musica:'🎵',foto:'📷',cerimonial:'🎀',outros:'📦'};
 const MESES      = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const DIAS       = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
- 
+
 let currentUser = null;
 let isDono = false;
 let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth();
 let importType = 'clientes';
- 
+
 // ── SUPABASE CACHE ────────────────────────────────────────────────
 let CACHE = { clientes:[], eventos:[], orcamentos:[], followups:[], historico:[], produtos:[], contas:[], lancamentos:[] };
- 
+
 async function loadAll() {
   const [cli, ev, orc, fu, hist, prod, contas, lanc] = await Promise.all([
     sb.from('clientes').select('*').order('nome'),
@@ -552,7 +594,7 @@ async function loadAll() {
   CACHE.contas     = contas.data||[];
   CACHE.lancamentos= lanc.data||[];
 }
- 
+
 // ── AUTH ──────────────────────────────────────────────────────────
 async function initAuth() {
   const { data:{ session } } = await sb.auth.getSession();
@@ -561,7 +603,7 @@ async function initAuth() {
     if(sess?.user) { await onLogin(sess.user); } else { showLogin(); }
   });
 }
- 
+
 async function doLogin() {
   const email = document.getElementById('lemail').value.trim();
   const pass  = document.getElementById('lpass').value;
@@ -570,11 +612,11 @@ async function doLogin() {
   const { error } = await sb.auth.signInWithPassword({email,password:pass});
   if(error) err.textContent = 'E-mail ou senha incorretos.';
 }
- 
+
 async function doLogout() {
   await sb.auth.signOut();
 }
- 
+
 async function onLogin(user) {
   const { data: perfil } = await sb.from('perfis').select('*').eq('id',user.id).single();
   currentUser = perfil||{ nome: user.email.split('@')[0], tipo:'colaborador' };
@@ -596,13 +638,13 @@ async function onLogin(user) {
   renderImportTypes();
   updateFuBadge();
 }
- 
+
 function showLogin() {
   document.getElementById('loading').style.display='none';
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('app').style.display='none';
 }
- 
+
 // ── NAVIGATION ────────────────────────────────────────────────────
 function setupNav() {
   document.querySelectorAll('.ni[data-page]').forEach(el => {
@@ -613,7 +655,7 @@ function setupNav() {
     });
   });
 }
- 
+
 function renderPage(p) {
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   const pg = document.getElementById('page-'+p);
@@ -627,7 +669,7 @@ function renderPage(p) {
   if(p==='financeiro')  renderFinanceiro();
   if(p==='relatorios')  renderRelatorios();
 }
- 
+
 // ── MODALS ────────────────────────────────────────────────────────
 function setupModals() {
   document.querySelectorAll('.moverlay').forEach(m => {
@@ -654,7 +696,7 @@ function openModal(id) {
   document.getElementById('modal-'+id).classList.add('open');
 }
 function closeModal(id) { document.getElementById('modal-'+id).classList.remove('open'); }
- 
+
 // ── DASHBOARD ────────────────────────────────────────────────────
 function renderDashboard() {
   const now = new Date();
@@ -662,10 +704,10 @@ function renderDashboard() {
   const greet = now.getHours()<12?'Bom dia':now.getHours()<18?'Boa tarde':'Boa noite';
   document.getElementById('dash-greeting').textContent = greet+', '+currentUser.nome.split(' ')[0]+'! 👋';
   document.getElementById('dash-sub').textContent = 'Aqui está o resumo do seu negócio.';
- 
+
   const evMes = CACHE.eventos.filter(e => { const d=new Date(e.data+'T12:00:00'); return d.getMonth()===mes&&d.getFullYear()===ano; });
   document.getElementById('ds-eventos').textContent = evMes.length;
- 
+
   const futuros = CACHE.eventos.filter(e=>e.data>=today()&&e.status!=='cancelado').sort((a,b)=>a.data.localeCompare(b.data));
   if(futuros.length) {
     const prox = futuros[0];
@@ -676,16 +718,16 @@ function renderDashboard() {
     document.getElementById('ds-proximo').textContent='—';
     document.getElementById('ds-proximo-m').textContent='Nenhum evento futuro';
   }
- 
+
   if(isDono) {
     const recMes = CACHE.lancamentos.filter(l=>l.tipo==='receita'&&l.data&&l.data.startsWith(ano+'-'+(mes+1).toString().padStart(2,'0'))).reduce((a,l)=>a+Number(l.valor),0);
     document.getElementById('ds-rec').textContent=fmtMoney(recMes);
   }
- 
+
   const fuPend = CACHE.followups.filter(f=>!f.feito&&f.data<=today());
   document.getElementById('ds-fu').textContent=fuPend.length;
   document.getElementById('ds-fu-m').textContent=fuPend.length?fuPend.length+' aguardando':'Em dia ✓';
- 
+
   // Lista próximos eventos
   const listEl = document.getElementById('dash-eventos-list');
   listEl.innerHTML = futuros.slice(0,4).map(ev=>{
@@ -696,7 +738,7 @@ function renderDashboard() {
       <span class="badge ${dias<=3?'bw':'bn'}">${dias===0?'Hoje':dias+'d'}</span>
     </div>`;
   }).join('') || '<div class="empty">Nenhum evento futuro</div>';
- 
+
   // Pagamentos pendentes
   if(isDono) {
     const pendentes = CACHE.lancamentos.filter(l=>l.status==='pendente'||l.status==='atrasado').slice(0,4);
@@ -709,7 +751,7 @@ function renderDashboard() {
     }).join('')||'<div class="empty">Nenhum pagamento pendente</div>';
   }
 }
- 
+
 // ── CALENDÁRIO ────────────────────────────────────────────────────
 function renderCalendar() {
   document.getElementById('cal-label').textContent = MESES[calMonth]+' '+calYear;
@@ -730,7 +772,7 @@ function renderCalendar() {
   document.getElementById('cal-grid').innerHTML=html;
 }
 function calNav(dir) { calMonth+=dir; if(calMonth>11){calMonth=0;calYear++;} if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); }
- 
+
 // ── EVENTOS ───────────────────────────────────────────────────────
 function renderEventos() {
   document.getElementById('ev-lista-view').style.display='block';
@@ -746,7 +788,7 @@ function renderEventos() {
     </tr>`;
   }).join('')||`<tr><td colspan="6" class="empty">Nenhum evento cadastrado</td></tr>`;
 }
- 
+
 async function verEvento(id) {
   const ev = CACHE.eventos.find(e=>e.id===id); if(!ev) return;
   const cli = CACHE.clientes.find(c=>c.id===ev.cliente_id);
@@ -755,7 +797,7 @@ async function verEvento(id) {
   const { data: docs } = await sb.from('evento_documentos').select('*').eq('evento_id',id);
   const { data: pags } = await sb.from('lancamentos').select('*').eq('evento_id',id);
   const totalSvc = (servicos||[]).reduce((a,s)=>a+Number(s.valor),0);
- 
+
   document.getElementById('ev-lista-view').style.display='none';
   document.getElementById('ev-detalhe-view').style.display='block';
   document.getElementById('ev-detalhe-view').innerHTML = `
@@ -824,14 +866,14 @@ async function verEvento(id) {
     });
   });
 }
- 
+
 async function simUpload(evId) {
   const nome = prompt('Nome do documento:','Contrato de prestação de serviços.pdf');
   if(!nome) return;
   await sb.from('evento_documentos').insert({evento_id:evId,nome,tamanho:'—',assinado:false});
   verEvento(evId);
 }
- 
+
 async function simAssinar(evId) {
   const { data: docs } = await sb.from('evento_documentos').select('*').eq('evento_id',evId).eq('assinado',false).limit(1);
   if(!docs?.length) return;
@@ -839,7 +881,7 @@ async function simAssinar(evId) {
   await sb.from('evento_documentos').update({assinado:true,assinado_ip:ip,assinado_em:new Date().toISOString()}).eq('id',docs[0].id);
   verEvento(evId);
 }
- 
+
 async function addSvcModal(evId) {
   const desc = prompt('Descrição do serviço/produto:');
   if(!desc) return;
@@ -847,7 +889,7 @@ async function addSvcModal(evId) {
   await sb.from('evento_servicos').insert({evento_id:evId,descricao:desc,valor:val});
   verEvento(evId);
 }
- 
+
 // ── SALVAR EVENTO ─────────────────────────────────────────────────
 async function salvarEvento() {
   const nome=document.getElementById('ev-nome').value.trim();
@@ -862,7 +904,7 @@ async function salvarEvento() {
   renderEventos();
   updateFuBadge();
 }
- 
+
 // ── CLIENTES ──────────────────────────────────────────────────────
 function renderClientes() {
   document.getElementById('cli-tbody').innerHTML = CACHE.clientes.map(c=>`<tr>
@@ -874,7 +916,7 @@ function renderClientes() {
     <td><button class="btn bsec bsm">Ver</button></td>
   </tr>`).join('')||`<tr><td colspan="6" class="empty">Nenhum cliente cadastrado</td></tr>`;
 }
- 
+
 async function salvarCliente() {
   const nome=document.getElementById('cli-nome').value.trim();
   if(!nome){alert('Informe o nome do cliente.');return;}
@@ -886,12 +928,12 @@ async function salvarCliente() {
   renderClientes();
   loadClientesSelect();
 }
- 
+
 function loadClientesSelect() {
   const sel=document.getElementById('ev-cliente');
   sel.innerHTML='<option value="">Selecione o cliente...</option>'+CACHE.clientes.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
 }
- 
+
 // ── ORÇAMENTOS ────────────────────────────────────────────────────
 function renderOrcamentos() {
   const semResposta = CACHE.orcamentos.filter(o=>o.etapa!=='fechado'&&diffDays(o.ultimo_contato)>=3);
@@ -900,7 +942,7 @@ function renderOrcamentos() {
   else alertEl.classList.add('hidden');
   renderFunil(); renderFollowups(); renderHistorico(); renderOrcLista();
 }
- 
+
 function renderFunil() {
   const etapas=['lead','proposta','negociacao','fechado'];
   const labels={lead:'Lead',proposta:'Proposta',negociacao:'Negociação',fechado:'Fechado ✓'};
@@ -923,7 +965,7 @@ function renderFunil() {
       }).join('')}
     </div>`).join('');
 }
- 
+
 async function avancarOrc(id) {
   const o=CACHE.orcamentos.find(x=>x.id===id); if(!o) return;
   const prox={lead:'proposta',proposta:'negociacao',negociacao:'fechado'};
@@ -931,7 +973,7 @@ async function avancarOrc(id) {
   await sb.from('orcamentos').update({etapa:prox[o.etapa]}).eq('id',id);
   await loadAll(); renderOrcamentos();
 }
- 
+
 function renderFollowups() {
   const pend=CACHE.followups.filter(f=>!f.feito&&f.data<=today());
   const prox=CACHE.followups.filter(f=>!f.feito&&f.data>today());
@@ -954,12 +996,12 @@ function renderFollowups() {
   document.getElementById('fu-pendentes').innerHTML=pend.map(f=>renderFu(f,'pend')).join('')||'<div class="empty">Nenhum follow-up pendente ✓</div>';
   document.getElementById('fu-proximos').innerHTML=prox.map(f=>renderFu(f,'prox')).join('')||'<div class="empty">Nenhum agendado</div>';
 }
- 
+
 async function marcarFeito(id) {
   await sb.from('followups').update({feito:true}).eq('id',id);
   await loadAll(); renderOrcamentos(); updateFuBadge();
 }
- 
+
 function renderHistorico() {
   document.getElementById('hist-list').innerHTML=[...CACHE.historico].slice(0,20).map(h=>{
     const o=CACHE.orcamentos.find(x=>x.id===h.orcamento_id)||{cliente:'—'};
@@ -970,7 +1012,7 @@ function renderHistorico() {
     </div>`;
   }).join('')||'<div class="empty">Nenhum contato registrado</div>';
 }
- 
+
 function renderOrcLista() {
   document.getElementById('orc-tbody').innerHTML=CACHE.orcamentos.map(o=>{
     const e=ETAPA_MAP[o.etapa]||{l:o.etapa,c:'bn'};
@@ -988,7 +1030,7 @@ function renderOrcLista() {
     </tr>`;
   }).join('')||`<tr><td colspan="7" class="empty">Nenhuma proposta</td></tr>`;
 }
- 
+
 async function salvarOrc() {
   const cli=document.getElementById('orc-cli').value.trim(); if(!cli){alert('Informe o nome do cliente.');return;}
   const diasFu=Number(document.getElementById('orc-fu').value)||3;
@@ -998,7 +1040,7 @@ async function salvarOrc() {
   closeModal('novoOrc');
   await loadAll(); renderOrcamentos(); updateFuBadge();
 }
- 
+
 async function salvarFollowup() {
   const orcId=document.getElementById('fu-orc').value;
   const data=document.getElementById('fu-data').value; if(!data){alert('Informe a data.');return;}
@@ -1006,7 +1048,7 @@ async function salvarFollowup() {
   closeModal('novoFollowup');
   await loadAll(); renderOrcamentos(); updateFuBadge();
 }
- 
+
 async function salvarContato() {
   const orcId=document.getElementById('cont-orc').value;
   const data=document.getElementById('cont-data').value; if(!data){alert('Informe a data.');return;}
@@ -1017,20 +1059,20 @@ async function salvarContato() {
   closeModal('novoContato');
   await loadAll(); renderOrcamentos(); updateFuBadge();
 }
- 
+
 async function converterEvento(id) {
   const o=CACHE.orcamentos.find(x=>x.id===id); if(!o) return;
   await sb.from('orcamentos').update({etapa:'fechado'}).eq('id',id);
   alert(`✓ "${o.cliente}" convertido!\nAbra Eventos → Novo Evento para finalizar o cadastro.`);
   await loadAll(); renderOrcamentos();
 }
- 
+
 function updateFuBadge() {
   const n=CACHE.followups.filter(f=>!f.feito&&f.data<=today()).length;
   const b=document.getElementById('badge-fu');
   b.textContent=n; b.classList.toggle('hidden',n===0);
 }
- 
+
 // ── SERVIÇOS ──────────────────────────────────────────────────────
 function renderServicos() {
   const total=CACHE.produtos.length;
@@ -1053,7 +1095,7 @@ function renderServicos() {
     </tr>`;
   }).join('')||`<tr><td colspan="6" class="empty">Nenhum item cadastrado</td></tr>`;
 }
- 
+
 function calcProdMargem() {
   const c=parseFloat(document.getElementById('prod-custo').value)||0;
   const p=parseFloat(document.getElementById('prod-preco').value)||0;
@@ -1062,11 +1104,11 @@ function calcProdMargem() {
   el.textContent=p?m+'%':'—';
   el.style.color=m>=40?'var(--success)':m>=20?'var(--warn)':'var(--danger)';
 }
- 
+
 function renderAlergChecks() {
   document.getElementById('alerg-checks').innerHTML=ALERG_LIST.map(a=>`<label style="display:flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;border:.5px solid var(--border);background:var(--cream);cursor:pointer;font-size:12px"><input type="checkbox" value="${a}" style="accent-color:var(--rose-d)"> ${a}</label>`).join('');
 }
- 
+
 async function salvarProduto() {
   const nome=document.getElementById('prod-nome').value.trim(); if(!nome){alert('Informe o nome.');return;}
   const alerg=[...document.querySelectorAll('#alerg-checks input:checked')].map(i=>i.value);
@@ -1076,7 +1118,7 @@ async function salvarProduto() {
   closeModal('novoProduto');
   await loadAll(); renderServicos();
 }
- 
+
 // ── FINANCEIRO ────────────────────────────────────────────────────
 function renderFinanceiro() {
   const mes=new Date().getMonth(), ano=new Date().getFullYear();
@@ -1091,12 +1133,12 @@ function renderFinanceiro() {
   document.getElementById('fin-contas').innerHTML=CACHE.contas.map(c=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--cream);border-radius:9px;border:.5px solid var(--border);margin-bottom:8px"><div><div style="font-weight:500;font-size:13px">${c.nome}</div><div style="font-size:11px;color:var(--muted)">${c.banco||''}</div></div><div style="font-size:15px;font-weight:500;font-family:'Playfair Display',serif;color:var(--success)">${fmtMoney(c.saldo_inicial)}</div></div>`).join('')||'<div class="empty">Nenhuma conta</div>';
   document.getElementById('fin-lanc-list').innerHTML=CACHE.lancamentos.slice(0,8).map(l=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 11px;border-radius:8px;background:${l.tipo==='receita'?'var(--success-bg)':'var(--danger-bg)'};margin-bottom:6px"><div><div style="font-size:13px;font-weight:500">${l.descricao}</div><div style="font-size:11px;color:var(--muted)">${fmtDate(l.data)}</div></div><div style="font-size:13px;font-weight:500;color:${l.tipo==='receita'?'var(--success)':'var(--danger)'}"> ${l.tipo==='receita'?'+':'−'}${fmtMoney(l.valor)}</div></div>`).join('')||'<div class="empty">Nenhum lançamento</div>';
 }
- 
+
 function loadContasSelect() {
   const sel=document.getElementById('lanc-conta');
   sel.innerHTML=CACHE.contas.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
 }
- 
+
 async function salvarLanc() {
   const desc=document.getElementById('lanc-desc').value.trim();
   const valor=parseFloat(document.getElementById('lanc-valor').value);
@@ -1106,7 +1148,7 @@ async function salvarLanc() {
   closeModal('novoLanc');
   await loadAll(); renderFinanceiro();
 }
- 
+
 // ── OFX ──────────────────────────────────────────────────────────
 function processOFX(input) {
   const file=input.files[0]; if(!file) return;
@@ -1140,7 +1182,7 @@ function processOFX(input) {
   };
   reader.readAsText(file,'latin1');
 }
- 
+
 // ── RELATÓRIOS ────────────────────────────────────────────────────
 function renderRelatorios() {
   const ano=new Date().getFullYear();
@@ -1164,14 +1206,14 @@ function renderRelatorios() {
     return `<tr><td>${ev.nome}</td><td>${fmtDate(ev.data)}</td><td>${ev.convidados||0}</td><td>${fmtMoney(ev.valor)}</td><td>${fmtMoney(rec)}</td><td><span class="badge ${s.c}">${s.l}</span></td></tr>`;
   }).join('')||`<tr><td colspan="6" class="empty">Nenhum evento</td></tr>`;
 }
- 
+
 // ── IMPORTADOR ────────────────────────────────────────────────────
 function renderImportTypes() {
   document.getElementById('import-type-sel').innerHTML=[
     {k:'clientes',i:'◉',l:'Clientes'},{k:'eventos',i:'✦',l:'Eventos'},{k:'financeiro',i:'◈',l:'Financeiro'},{k:'orcamentos',i:'◎',l:'Orçamentos'}
   ].map(t=>`<div onclick="importType='${t.k}';renderImportTypes()" style="padding:12px;border-radius:10px;border:.5px solid ${importType===t.k?'var(--rose)':'var(--border)'};cursor:pointer;text-align:center;background:${importType===t.k?'var(--rose-l)':'var(--cream)'}"><div style="font-size:18px;margin-bottom:5px">${t.i}</div><div style="font-size:12px;font-weight:500">${t.l}</div></div>`).join('');
 }
- 
+
 function handleImportFile(input) {
   const file=input.files[0]; if(!file) return;
   const reader=new FileReader();
@@ -1197,7 +1239,7 @@ function handleImportFile(input) {
   };
   file.name.match(/\.csv$/i)?reader.readAsText(file,'UTF-8'):reader.readAsBinaryString(file);
 }
- 
+
 async function executarImport(data) {
   let ok=0,err=0;
   for(const row of data) {
@@ -1214,15 +1256,15 @@ async function executarImport(data) {
   document.getElementById('import-area').innerHTML=`<div style="background:var(--success-bg);border-radius:10px;padding:14px 16px;font-size:13px;color:var(--success)">✓ Importação concluída! ${ok} registros importados${err?`, ${err} com erro`:''}.${err?'<br><span style="font-size:12px;opacity:.8">Revise os itens com erro manualmente.</span>':''}</div>`;
   renderPage(importType==='financeiro'?'financeiro':importType==='orcamentos'?'orcamentos':importType);
 }
- 
+
 // ── INIT ──────────────────────────────────────────────────────────
- 
+
 // ── GOOGLE CALENDAR ───────────────────────────────────────────────
 const GCAL_CLIENT_ID = '878329307870-o3naodglalr13tk8ig522ng93f89h946.apps.googleusercontent.com';
 const GCAL_SCOPES = 'https://www.googleapis.com/auth/calendar';
 let gcalToken = null;
 let gcalConnected = false;
- 
+
 function loadGoogleAPI() {
   if(window.google && window.google.accounts) return;
   const s = document.createElement('script');
@@ -1230,7 +1272,7 @@ function loadGoogleAPI() {
   s.async = true; s.defer = true;
   document.head.appendChild(s);
 }
- 
+
 function connectGoogle() {
   loadGoogleAPI();
   setTimeout(function() {
@@ -1251,14 +1293,14 @@ function connectGoogle() {
     client.requestAccessToken();
   }, 1000);
 }
- 
+
 function disconnectGoogle() {
   gcalToken = null; gcalConnected = false;
   localStorage.removeItem('gcal_token');
   localStorage.removeItem('gcal_calendar_id');
   updateGcalUI(false);
 }
- 
+
 function updateGcalUI(connected) {
   const btnC  = document.getElementById('btn-gcal-connect');
   const btnD  = document.getElementById('btn-gcal-disconnect');
@@ -1276,7 +1318,7 @@ function updateGcalUI(connected) {
     if(badge) { badge.textContent = 'Nao conectado'; badge.className = 'badge bn'; }
   }
 }
- 
+
 async function gcalFetch(url, options) {
   if(!gcalToken) return null;
   options = options || {};
@@ -1287,7 +1329,7 @@ async function gcalFetch(url, options) {
   if(!res.ok) return null;
   return res.json();
 }
- 
+
 async function findCalendarId(name) {
   const data = await gcalFetch('https://www.googleapis.com/calendar/v3/users/me/calendarList');
   if(!data || !data.items) return 'primary';
@@ -1298,13 +1340,13 @@ async function findCalendarId(name) {
   }
   return 'primary';
 }
- 
+
 async function loadGcalEvents() {
   const now    = new Date();
   const start  = new Date(now.getFullYear() - 1, 0, 1).toISOString();
   const end    = new Date(now.getFullYear() + 2, 11, 31).toISOString();
   const saved  = localStorage.getItem('gcal_calendar_id');
-  const calId  = saved || await findCalendarId('Eventos Buffet Santa Maria');
+  const calId  = localStorage.getItem('gcal_calendar_id') || GCAL_DEFAULT_ID;
   const encId  = encodeURIComponent(calId);
   let allEvents = [];
   let pageToken = '';
@@ -1321,8 +1363,8 @@ async function loadGcalEvents() {
   if(!el) return;
   const events = data.items.filter(function(e) { return e.status !== 'cancelled'; });
   const badge  = document.getElementById('gcal-sync-badge');
-  if(badge) { badge.textContent = 'Eventos Buffet Santa Maria (' + events.length + ')'; badge.className = 'badge bs'; }
-  if(!events.length) { el.innerHTML = '<div class="empty">Nenhum evento em Eventos Buffet Santa Maria neste periodo.</div>'; return; }
+  if(badge) { badge.textContent = 'Agenda principal (' + events.length + ' eventos)'; badge.className = 'badge bs'; }
+  if(!events.length) { el.innerHTML = '<div class="empty">Nenhum evento na agenda principal neste periodo.</div>'; return; }
   el.innerHTML = events.map(function(e) {
     const st = (e.start && (e.start.dateTime || e.start.date)) || '';
     const d  = st ? new Date(st).toLocaleDateString('pt-BR', {day:'2-digit',month:'short',year:'numeric'}) : '---';
@@ -1330,7 +1372,7 @@ async function loadGcalEvents() {
   }).join('');
   mergeGcalIntoCalendar(events);
 }
- 
+
 function mergeGcalIntoCalendar(gcalEvents) {
   gcalEvents.forEach(function(e) {
     const dateStr = ((e.start && (e.start.dateTime || e.start.date)) || '').slice(0,10);
@@ -1340,11 +1382,11 @@ function mergeGcalIntoCalendar(gcalEvents) {
   });
   renderCalendar();
 }
- 
+
 async function gcalCalendarId() {
-  return localStorage.getItem('gcal_calendar_id') || await findCalendarId('Eventos Buffet Santa Maria');
+  return localStorage.getItem('gcal_calendar_id') || GCAL_DEFAULT_ID;
 }
- 
+
 async function syncEventosToGcal() {
   if(!gcalToken) return;
   const calId   = await gcalCalendarId();
@@ -1355,7 +1397,7 @@ async function syncEventosToGcal() {
     await gcalFetch('https://www.googleapis.com/calendar/v3/calendars/' + encId + '/events', { method: 'POST', body: JSON.stringify({ summary: ev.nome, location: ev.local || '', start: { date: ev.data }, end: { date: ev.data } }) });
   }
 }
- 
+
 async function addEventoToGcal(ev) {
   if(!gcalConnected || !gcalToken) return;
   const calId   = await gcalCalendarId();
@@ -1363,13 +1405,63 @@ async function addEventoToGcal(ev) {
   const hasTime = ev.horario && ev.horario.length > 0;
   await gcalFetch('https://www.googleapis.com/calendar/v3/calendars/' + encId + '/events', { method: 'POST', body: JSON.stringify({ summary: ev.nome, location: ev.local || '', start: hasTime ? { dateTime: ev.data + 'T' + ev.horario + ':00', timeZone: 'America/Sao_Paulo' } : { date: ev.data }, end: hasTime ? { dateTime: ev.data + 'T' + ev.horario + ':00', timeZone: 'America/Sao_Paulo' } : { date: ev.data } }) });
 }
- 
+
+
+// ── GOOGLE AGENDA EMBED ───────────────────────────────────────────
+function salvarEmbedUrl() {
+  const raw = document.getElementById('gcal-embed-url').value.trim();
+  if(!raw) { alert('Cole a URL da agenda antes de salvar.'); return; }
+  // Accepts both ical URL and HTML embed src — extract calendar ID
+  let calId = '';
+  const icalMatch = raw.match(/calendar\/ical\/([^\/]+)\//);
+  const embedMatch = raw.match(/calendar\/embed\?src=([^&]+)/);
+  const basicMatch = raw.match(/src=([^&"]+)/);
+  if(icalMatch) calId = decodeURIComponent(icalMatch[1]);
+  else if(embedMatch) calId = decodeURIComponent(embedMatch[1]);
+  else if(basicMatch) calId = decodeURIComponent(basicMatch[1]);
+  else calId = raw;
+  localStorage.setItem('gcal_embed_id', calId);
+  renderIframe(calId);
+}
+
+const GCAL_DEFAULT_ID = '7hlsm570cev3laekctm1r37kms@group.calendar.google.com';
+const GCAL_DEFAULT_ENC = '7hlsm570cev3laekctm1r37kms%40group.calendar.google.com';
+
+function renderIframe(calId) {
+  calId = calId || GCAL_DEFAULT_ID;
+  const view = (document.getElementById('gcal-view-sel') || {value:'MONTH'}).value || 'MONTH';
+  const enc  = encodeURIComponent(calId);
+  const src  = 'https://calendar.google.com/calendar/embed?src=' + enc + '&ctz=America%2FSao_Paulo&mode=' + view + '&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=0&hl=pt-BR&bgcolor=%23ffffff';
+  document.getElementById('gcal-iframe').src = src;
+  document.getElementById('gcal-open-link').href = 'https://calendar.google.com/calendar/r?cid=' + enc;
+  document.getElementById('gcal-setup-card').style.display = 'none';
+  document.getElementById('gcal-iframe-wrap').style.display = 'block';
+}
+
+function updateIframe() {
+  const calId = localStorage.getItem('gcal_embed_id');
+  if(calId) renderIframe(calId);
+}
+
+// Auto-load agenda iframe — always show default calendar
+const _origRenderPage = renderPage;
+function renderPage(p) {
+  _origRenderPage(p);
+  if(p === 'agenda') {
+    const saved = localStorage.getItem('gcal_embed_id') || GCAL_DEFAULT_ID;
+    document.getElementById('gcal-setup-card').style.display = 'none';
+    document.getElementById('gcal-iframe-wrap').style.display = 'block';
+    if(document.getElementById('gcal-embed-url')) document.getElementById('gcal-embed-url').value = saved;
+    renderIframe(saved);
+  }
+}
+
 window.addEventListener('load', function() {
   const saved = localStorage.getItem('gcal_token');
   if(saved) { gcalToken = saved; gcalConnected = true; updateGcalUI(true); loadGcalEvents(); }
   loadGoogleAPI();
 });
- 
+
 initAuth();
 </script>
 </body>
