@@ -2363,38 +2363,42 @@ async function enviarZapSign(docId, evId) {
   if(btn) { btn.textContent = 'Enviando...'; btn.disabled = true; }
 
   try {
-    // Gera PDF do documento para enviar ao ZapSign
-    const svcsZ   = (CACHE.eventoServicos||[]).filter(s=>s.evento_id===evId);
-    const pagsZ   = CACHE.lancamentos.filter(l=>l.evento_id===evId&&l.tipo==='receita');
-    const valZ    = calcValorContrato(evId);
-    const pagoZ   = pagsZ.reduce((a,p)=>a+Number(p.valor),0);
-    const saldoZ  = Math.max(0, valZ - pagoZ);
-    const itensZ  = svcsZ.map(s=>'- '+s.descricao+' '+fmtMoney(s.valor)).join('\n') || '(nenhum item)';
-    const pagsStrZ = pagsZ.map(p=>fmtDate(p.data)+' '+fmtMoney(p.valor)).join('\n') || '(nenhum pagamento)';
-    const textoZ  = [
+    // Monta texto do documento (PDF gerado no servidor)
+    const svcsZ    = (CACHE.eventoServicos||[]).filter(s=>s.evento_id===evId);
+    const pagsZ    = CACHE.lancamentos.filter(l=>l.evento_id===evId&&l.tipo==='receita');
+    const valZ     = calcValorContrato(evId);
+    const pagoZ    = pagsZ.reduce((a,p)=>a+Number(p.valor),0);
+    const saldoZ   = Math.max(0, valZ - pagoZ);
+    const textoLinhas = [
       'RESUMO FINANCEIRO DO CONTRATO',
-      'Santa Maria Buffet & Eventos  -  Emitido: '+new Date().toLocaleDateString('pt-BR'),
+      'Santa Maria Buffet & Eventos',
+      'Emitido em: ' + new Date().toLocaleDateString('pt-BR'),
       '',
-      'EVENTO: '+ev.nome,
-      'Data: '+fmtDate(ev.data)+(ev.horario?' as '+ev.horario.slice(0,5):'')+' | Local: '+(ev.local||'-')+' | '+ev.convidados+' convidados',
-      'Cliente: '+cli.nome+(cli.telefone?' | '+cli.telefone:'')+(cli.email?' | '+cli.email:''),
+      'EVENTO: ' + ev.nome,
+      'Data: ' + fmtDate(ev.data) + (ev.horario?' as '+ev.horario.slice(0,5):'') + ' | Local: ' + (ev.local||'-'),
+      'Convidados: ' + (ev.convidados||0) + ' | Cliente: ' + cli.nome,
+      (cli.telefone?'Telefone: '+cli.telefone:'') ,
+      (cli.email?'Email: '+cli.email:''),
       '',
       'SERVICOS E PRODUTOS:',
-      itensZ,
+    ].concat(
+      svcsZ.length ? svcsZ.map(s=>'  - '+s.descricao+' ... '+fmtMoney(s.valor)) : ['  (nenhum item)']
+    ).concat([
       '',
       'RESUMO FINANCEIRO:',
-      'Valor total: '+fmtMoney(valZ)+'  |  Total recebido: '+fmtMoney(pagoZ)+'  |  Saldo em aberto: '+fmtMoney(saldoZ),
+      '  Valor total do contrato: ' + fmtMoney(valZ),
+      '  Total recebido: ' + fmtMoney(pagoZ),
+      '  Saldo em aberto: ' + fmtMoney(saldoZ),
       '',
-      'PAGAMENTOS:',
-      pagsStrZ,
-    ].join('\n');
-    const pdfContent = gerarPdfSimples(doc.nome+' - '+ev.nome, textoZ);
+      'HISTORICO DE PAGAMENTOS:',
+    ]).concat(
+      pagsZ.length ? pagsZ.map(p=>'  '+fmtDate(p.data)+' - '+fmtMoney(p.valor)+' ('+( p.forma_pagamento||'')+ ')') : ['  (nenhum pagamento)']
+    );
 
     const payload = {
-      name:        doc.nome + ' - ' + ev.nome,
-      lang:        'pt-BR',
-      sandbox:     false,
-      base64_pdf:  pdfContent,
+      nome:   doc.nome + ' - ' + ev.nome,
+      name:   doc.nome + ' - ' + ev.nome,
+      texto:  textoLinhas,
       signers: (function() {
         var _dNome  = (currentUser && currentUser.nome)  || 'Santa Maria Buffet';
         var _dEmail = (currentUser && currentUser.email) || '';
