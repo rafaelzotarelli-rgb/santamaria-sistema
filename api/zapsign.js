@@ -2,7 +2,7 @@
 // Coloque este arquivo em /api/zapsign.js no repositório GitHub
 
 const ZAPSIGN_TOKEN = 'b4ef5c08-b314-49d0-9f72-8159a7a11fe154147000-c334-4c7b-81bb-0706d7b83a2c';
-const ZAPSIGN_BASE  = 'https://api.zapsign.com.br/api/v1';
+const ZAPSIGN_BASE  = 'https://sandbox.zapsign.com.br/api/v1';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
