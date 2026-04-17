@@ -5,7 +5,2440 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Santa Maria Buffet — Gestão</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Santa Maria Buffet — Gestão</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ── RESET & VARS ── */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --rose:#b5464e;--rose-l:#f5e8e9;--rose-d:#7a2f35;
+  --gold:#b8922e;--gold-l:#fdf6e3;--gold-d:#7a5e1a;
+  --cream:#faf8f5;--dark:#2c2320;--muted:#7a6f6b;
+  --border:rgba(44,35,32,0.12);--white:#fff;
+  --success:#3d6e4a;--success-bg:#e8f2ec;
+  --warn:#9a6820;--warn-bg:#fdf2e0;
+  --danger:#922e2e;--danger-bg:#faeaea;
+  --info:#1e569a;--info-bg:#e6eef9;
+  --sidebar:220px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--dark);font-size:14px;min-height:100vh}
+
+/* ── LOADING ── */
+#loading{position:fixed;inset:0;background:var(--cream);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;z-index:999}
+.spin{width:32px;height:32px;border:2px solid var(--rose-l);border-top-color:var(--rose-d);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── LOGIN ── */
+#login-screen{min-height:100vh;display:none;align-items:center;justify-content:center;background:linear-gradient(135deg,#faf8f5,#f5e8e9,#fdf6e3)}
+.lcard{background:var(--white);border-radius:20px;padding:48px 40px;width:380px;border:.5px solid var(--border);text-align:center;box-shadow:0 8px 40px rgba(44,35,32,.08)}
+.llogo{font-family:serif;font-size:26px;font-weight:600;color:var(--rose-d);margin-bottom:2px}
+.lsub{font-size:10px;color:var(--muted);letter-spacing:2.5px;text-transform:uppercase;margin-bottom:32px}
+.linp{width:100%;padding:10px 14px;border:.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--dark);background:var(--cream);margin-bottom:12px;outline:none;transition:border-color .2s}
+.linp:focus{border-color:var(--rose);background:white}
+.lbtn{width:100%;padding:12px;background:var(--rose-d);color:white;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:background .2s;margin-top:4px}
+.lbtn:hover{background:var(--rose)}
+.lerr{font-size:12px;color:var(--danger);margin-top:8px;min-height:18px}
+
+/* ── APP ── */
+#app{display:none;min-height:100vh}
+.layout{display:flex;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar);background:var(--white);border-right:.5px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;overflow-y:auto}
+.slogo{padding:20px 18px 14px;border-bottom:.5px solid var(--border)}
+.slogo-t{font-family:serif;font-size:16px;font-weight:600;color:var(--rose-d);line-height:1.2}
+.slogo-s{font-size:9px;letter-spacing:1.8px;text-transform:uppercase;color:var(--muted);margin-top:2px}
+.snav{flex:1;padding:8px}
+.nsec{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:12px 10px 4px;font-weight:500}
+.ni{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;color:var(--muted);font-size:13px;transition:all .15s;margin-bottom:1px;user-select:none}
+.ni:hover{background:var(--rose-l);color:var(--rose-d)}
+.ni.active{background:var(--rose-l);color:var(--rose-d);font-weight:500}
+.ni-ico{font-size:14px;width:18px;text-align:center}
+.ni-badge{margin-left:auto;background:var(--danger);color:white;font-size:9px;font-weight:500;padding:1px 5px;border-radius:20px;min-width:16px;text-align:center}
+.suser{padding:12px 16px;border-top:.5px solid var(--border);display:flex;align-items:center;gap:8px}
+.savatar{width:28px;height:28px;border-radius:50%;background:var(--rose-l);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:var(--rose-d);flex-shrink:0}
+.sname{font-size:12px;font-weight:500;color:var(--dark)}
+.srole{font-size:10px;color:var(--muted)}
+.logoutb{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;padding:3px;border-radius:4px;transition:color .2s}
+.logoutb:hover{color:var(--danger)}
+
+/* ── MAIN ── */
+.main{margin-left:var(--sidebar);flex:1;padding:28px 28px 64px;max-width:calc(100vw - var(--sidebar))}
+.page{display:none}
+.page.active{display:block}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.ptitle{font-family:serif;font-size:21px;font-weight:500;color:var(--dark)}
+.psub{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* ── CARDS ── */
+.card{background:var(--white);border-radius:14px;padding:20px 22px;border:.5px solid var(--border);margin-bottom:16px}
+.ctitle{font-family:serif;font-size:15px;font-weight:500;color:var(--dark);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+
+/* ── STATS ── */
+.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.sc{background:var(--white);border-radius:12px;padding:16px 18px;border:.5px solid var(--border)}
+.slabel{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:500}
+.sval{font-family:serif;font-size:24px;color:var(--dark);margin:3px 0 1px}
+.smeta{font-size:11px;color:var(--muted)}
+.smeta.up{color:var(--success)}
+.smeta.wr{color:var(--warn)}
+.smeta.dn{color:var(--danger)}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;border-radius:10px;border:.5px solid var(--border)}
+table{width:100%;border-collapse:collapse;min-width:500px}
+th{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:500;padding:8px 12px;border-bottom:.5px solid var(--border);text-align:left;white-space:nowrap;background:var(--cream)}
+td{padding:11px 12px;border-bottom:.5px solid var(--border);font-size:13px;color:var(--dark);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--cream)}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
+.bs{background:var(--success-bg);color:var(--success)}
+.bw{background:var(--warn-bg);color:var(--warn)}
+.bd{background:var(--danger-bg);color:var(--danger)}
+.bi{background:var(--info-bg);color:var(--info)}
+.bn{background:#f0eeeb;color:var(--muted)}
+.bg{background:var(--rose-l);color:var(--rose-d)}
+.bgold{background:var(--gold-l);color:var(--gold-d)}
+
+/* ── BUTTONS ── */
+.btn{padding:8px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;border:none;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.bp{background:var(--rose-d);color:white}.bp:hover{background:var(--rose)}
+.bsec{background:var(--cream);color:var(--dark);border:.5px solid var(--border)}.bsec:hover{background:var(--rose-l);color:var(--rose-d);border-color:var(--rose)}
+.bgo{background:var(--success-bg);color:var(--success);border:.5px solid var(--success)}.bgo:hover{background:var(--success);color:white}
+.bwa{background:#e8fdf0;color:#25d366;border:.5px solid #25d366}.bwa:hover{background:#25d366;color:white}
+.bsm{padding:5px 11px;font-size:11px;border-radius:6px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── FORM ── */
+.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.fl{font-size:11px;color:var(--muted);font-weight:500}
+.fi{padding:8px 11px;border:.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--dark);background:var(--cream);outline:none;transition:border-color .2s;width:100%}
+.fi:focus{border-color:var(--rose);background:white}
+select.fi{appearance:none;cursor:pointer}
+textarea.fi{resize:vertical;min-height:64px}
+.fgrid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* ── MODAL ── */
+.moverlay{position:fixed;inset:0;background:rgba(44,35,32,.4);display:none;align-items:center;justify-content:center;z-index:200;padding:20px;overflow-y:auto}
+.moverlay.open{display:flex}
+.modal{background:var(--white);border-radius:16px;padding:28px;width:600px;max-height:92vh;overflow-y:auto;border:.5px solid var(--border);margin:auto}
+.modal-sm{width:460px}
+.mtitle{font-family:serif;font-size:18px;font-weight:500;margin-bottom:20px;color:var(--dark);display:flex;align-items:center;justify-content:space-between}
+.mclose{background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px;line-height:1;padding:2px}
+.mclose:hover{color:var(--danger)}
+.mfoot{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:.5px solid var(--border)}
+
+/* ── TABS ── */
+.tabs{display:flex;border-bottom:.5px solid var(--border);margin-bottom:18px;gap:0;overflow-x:auto}
+.tab{padding:9px 16px;font-size:12px;font-weight:500;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none;font-family:'DM Sans',sans-serif}
+.tab.active{color:var(--rose-d);border-bottom-color:var(--rose)}
+.tabcontent{display:none}.tabcontent.active{display:block}
+
+/* ── FUNIL ── */
+.funnel{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.fcol{background:var(--cream);border-radius:12px;padding:10px;min-height:160px}
+.fcolhead{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.fcard{background:var(--white);border-radius:8px;padding:10px;border:.5px solid var(--border);margin-bottom:6px;cursor:pointer;transition:all .15s;font-size:12px}
+.fcard:hover{border-color:var(--rose)}
+.fcard.alerta{border-color:var(--danger);background:var(--danger-bg)}
+.fcard.alerta-w{border-color:var(--warn);background:var(--warn-bg)}
+
+/* ── CALENDAR ── */
+.cal-grid-hdr{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.cgh{padding:6px 2px;text-align:center;font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);border-bottom:.5px solid var(--border);font-weight:500;overflow:hidden}
+.cgd{padding:5px 3px;min-height:72px;border-right:.5px solid var(--border);border-bottom:.5px solid var(--border);cursor:pointer;transition:background .15s;position:relative;overflow:hidden;min-width:0}
+.cgd:nth-child(7n){border-right:none}
+.cgd:hover{background:var(--rose-l)}
+.cgd.today{background:var(--rose-l)}
+.cgd.other-month{opacity:.3}
+.cgd-num{font-size:11px;font-weight:500;color:var(--dark);margin-bottom:2px;line-height:1}
+.cgd.today .cgd-num{background:var(--rose-d);color:white;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px}
+.cev{font-size:9px;background:var(--rose-l);color:var(--rose-d);border-radius:3px;padding:1px 3px;margin-bottom:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:500;display:block;max-width:100%;box-sizing:border-box;line-height:1.4}
+.cev.realizado{background:var(--success-bg);color:var(--success)}
+.cev.outro{background:var(--gold-l);color:var(--gold-d)}
+.cev.gcal{background:var(--info-bg);color:var(--info)}
+
+/* ── UPLOAD ── */
+.uparea{border:1.5px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;background:var(--cream)}
+.uparea:hover{border-color:var(--rose);background:var(--rose-l)}
+
+/* ── PROGRESS ── */
+.pbar{height:5px;background:var(--cream);border-radius:3px;overflow:hidden}
+.pfill{height:100%;border-radius:3px;background:var(--rose);transition:width .3s}
+
+/* ── MISC ── */
+.divider{height:.5px;background:var(--border);margin:14px 0}
+.empty{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+.avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.fin-only{} /* controlado por JS */
+@media(max-width:900px){
+  .sgrid{grid-template-columns:1fr 1fr}
+  .fgrid3{grid-template-columns:1fr 1fr}
+  .funnel{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <div style="font-family:serif;font-size:22px;color:var(--rose-d)">✦ Santa Maria Buffet</div>
+  <div class="spin"></div>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="lcard">
+    <div class="llogo">✦ Santa Maria Buffet</div>
+    <div class="lsub">Sistema de Gestão</div>
+    <label style="display:block;font-size:11px;color:var(--muted);text-align:left;margin-bottom:5px">E-mail</label>
+    <input class="linp" id="lemail" type="email" placeholder="seu@email.com" autocomplete="email">
+    <label style="display:block;font-size:11px;color:var(--muted);text-align:left;margin-bottom:5px">Senha</label>
+    <input class="linp" id="lpass" type="password" placeholder="••••••" autocomplete="current-password">
+    <button class="lbtn" onclick="doLogin()">Entrar</button>
+    <div class="lerr" id="lerr"></div>
+    <div style="margin-top:16px;font-size:11px;color:var(--muted)">buffetsantamaria.com.br</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+ <div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="slogo">
+      <div class="slogo-t">✦ Santa Maria</div>
+      <div class="slogo-s">Buffet & Eventos</div>
+    </div>
+    <nav class="snav">
+      <div class="nsec">Principal</div>
+      <div class="ni active" data-page="dashboard"><span class="ni-ico">◈</span>Dashboard</div>
+      <div class="ni" data-page="agenda"><span class="ni-ico">📅</span>Agenda</div>
+      <div class="ni" data-page="eventos"><span class="ni-ico">✦</span>Eventos</div>
+      <div class="ni" data-page="orcamentos"><span class="ni-ico">◎</span>Orçamentos<span class="ni-badge hidden" id="badge-fu">0</span></div>
+      <div class="ni" data-page="clientes"><span class="ni-ico">◉</span>Clientes</div>
+      <div class="ni" data-page="servicos"><span class="ni-ico">▦</span>Serviços</div>
+      <div class="nsec fin-only">Financeiro</div>
+      <div class="ni fin-only" data-page="financeiro"><span class="ni-ico">◈</span>Financeiro</div>
+      <div class="ni fin-only" data-page="conciliacao"><span class="ni-ico">⇄</span>Conciliação OFX</div>
+      <div class="nsec">Ferramentas</div>
+      <div class="ni" data-page="importador"><span class="ni-ico">↑</span>Importar dados</div>
+      <div class="ni fin-only" data-page="relatorios"><span class="ni-ico">▤</span>Relatórios</div>
+    </nav>
+    <div class="suser">
+      <div class="savatar" id="savatar">?</div>
+      <div style="min-width:0">
+        <div class="sname" id="sname" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</div>
+        <div class="srole" id="srole">—</div>
+      </div>
+      <button class="logoutb" onclick="doLogout()" title="Sair">✕</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ── DASHBOARD ── -->
+    <div class="page" id="page-dashboard">
+      <div class="topbar">
+        <div><div class="ptitle" id="dash-greeting">Bom dia!</div><div class="psub" id="dash-sub">Carregando...</div></div>
+        <button class="btn bp" onclick="openModal('novoEvento')">+ Novo Evento</button>
+      </div>
+      <div class="sgrid" id="dash-stats">
+        <div class="sc"><div class="slabel">Eventos este mês</div><div class="sval" id="ds-eventos">—</div><div class="smeta" id="ds-eventos-m"></div></div>
+        <div class="sc"><div class="slabel">Próximo evento</div><div class="sval" id="ds-proximo">—</div><div class="smeta" id="ds-proximo-m"></div></div>
+        <div class="sc fin-only"><div class="slabel">Recebido no mês</div><div class="sval" id="ds-rec">—</div><div class="smeta up" id="ds-rec-m"></div></div>
+        <div class="sc"><div class="slabel">Follow-ups hoje</div><div class="sval" id="ds-fu">—</div><div class="smeta wr" id="ds-fu-m"></div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="card">
+          <div class="ctitle">Próximos eventos</div>
+          <div id="dash-eventos-list"><div class="empty">Carregando...</div></div>
+        </div>
+        <div class="card fin-only">
+          <div class="ctitle">Pagamentos pendentes</div>
+          <div id="dash-pag-list"><div class="empty">Carregando...</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── AGENDA ── -->
+    <div class="page" id="page-agenda">
+      <div class="topbar">
+        <div><div class="ptitle">Agenda</div><div class="psub">Visualização direta do Google Agenda.</div></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn bsec" id="btn-gcal-connect" onclick="connectGoogle()">🔗 Sincronizar eventos</button>
+          <button class="btn bsec" id="btn-gcal-disconnect" style="display:none" onclick="disconnectGoogle()">✕ Desconectar</button>
+          <button class="btn bp" onclick="openModal('novoEvento')">+ Novo Evento</button>
+        </div>
+      </div>
+      <div id="gcal-status-bar" style="display:none;align-items:center;gap:10px;padding:10px 16px;border-radius:10px;background:var(--success-bg);border:.5px solid var(--success);margin-bottom:14px;font-size:13px;color:var(--success)"></div>
+
+      <div id="gcal-setup-card" class="card">
+        <div class="ctitle">Configurar visualização da agenda</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">
+          Para exibir sua agenda aqui, você precisa copiar o link de incorporação da agenda <strong>Eventos Buffet Santa Maria</strong> no Google Agenda.
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;background:var(--cream);border-radius:10px;padding:16px;margin-bottom:16px;font-size:13px">
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div style="width:22px;height:22px;border-radius:50%;background:var(--rose-l);color:var(--rose-d);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0">1</div>
+            <div>Acesse <strong>calendar.google.com</strong> no computador</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div style="width:22px;height:22px;border-radius:50%;background:var(--rose-l);color:var(--rose-d);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0">2</div>
+            <div>No menu esquerdo, passe o mouse sobre <strong>Eventos Buffet Santa Maria</strong> → clique nos <strong>três pontinhos (⋮)</strong></div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div style="width:22px;height:22px;border-radius:50%;background:var(--rose-l);color:var(--rose-d);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0">3</div>
+            <div>Clique em <strong>"Configurações e compartilhamento"</strong></div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div style="width:22px;height:22px;border-radius:50%;background:var(--rose-l);color:var(--rose-d);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0">4</div>
+            <div>Role até a seção <strong>"Integrar agenda"</strong> → copie o campo <strong>"URL pública desta agenda"</strong> (começa com <code style="background:var(--info-bg);color:var(--info);padding:1px 5px;border-radius:4px">https://calendar.google.com/calendar/ical/...</code>)</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div style="width:22px;height:22px;border-radius:50%;background:var(--rose-l);color:var(--rose-d);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0">5</div>
+            <div>Cole o link abaixo e clique em <strong>Salvar e exibir</strong></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="fi" id="gcal-embed-url" value="https://calendar.google.com/calendar/embed?src=7hlsm570cev3laekctm1r37kms%40group.calendar.google.com&ctz=America%2FSao_Paulo" style="flex:1">
+          <button class="btn bp" onclick="salvarEmbedUrl()">Salvar e exibir</button>
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:var(--muted)">
+          ⚠ A agenda precisa estar configurada como <strong>pública</strong> para aparecer aqui. Na mesma tela de configurações, em <strong>"Permissões de acesso"</strong>, marque <strong>"Tornar disponível ao público"</strong>.
+        </div>
+      </div>
+
+      <div id="gcal-iframe-wrap" style="display:none">
+        <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+          <select class="fi" id="gcal-view-sel" onchange="updateIframe()" style="width:160px">
+            <option value="WEEK">Semana</option>
+            <option value="MONTH" selected>Mês</option>
+            <option value="AGENDA">Lista</option>
+            <option value="DAY">Dia</option>
+          </select>
+          <button class="btn bsec bsm" onclick="document.getElementById('gcal-setup-card').style.display='block';document.getElementById('gcal-iframe-wrap').style.display='none'">⚙ Reconfigurar</button>
+          <a id="gcal-open-link" href="https://calendar.google.com" target="_blank" class="btn bsec bsm">↗ Abrir no Google</a>
+        </div>
+        <div style="background:var(--white);border-radius:14px;border:.5px solid var(--border);overflow:hidden;width:100%">
+          <iframe id="gcal-iframe"
+            src=""
+            style="width:100%;height:680px;border:none;display:block"
+            frameborder="0"
+            scrolling="no">
+          </iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── EVENTOS ── -->
+    <div class="page" id="page-eventos">
+      <div id="ev-lista-view">
+        <div class="topbar">
+          <div><div class="ptitle">Eventos</div><div class="psub">Todos os seus eventos e casamentos.</div></div>
+          <button class="btn bp" onclick="openModal('novoEvento')">+ Novo Evento</button>
+        </div>
+        <div class="card" style="margin-bottom:12px">
+          <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+            <div class="fg" style="margin:0;flex:2;min-width:160px">
+              <label class="fl">Buscar por nome</label>
+              <input class="fi" id="ev-busca" placeholder="Nome do evento..." oninput="renderEventos()">
+            </div>
+            <div class="fg" style="margin:0">
+              <label class="fl">Mês</label>
+              <select class="fi" id="ev-filtro-mes" onchange="renderEventos()" style="width:120px">
+                <option value="">Todos</option>
+                <option>Janeiro</option><option>Fevereiro</option><option>Março</option>
+                <option>Abril</option><option>Maio</option><option>Junho</option>
+                <option>Julho</option><option>Agosto</option><option>Setembro</option>
+                <option>Outubro</option><option>Novembro</option><option>Dezembro</option>
+              </select>
+            </div>
+            <div class="fg" style="margin:0">
+              <label class="fl">De</label>
+              <input class="fi" type="date" id="ev-filtro-de" onchange="renderEventos()" style="width:136px">
+            </div>
+            <div class="fg" style="margin:0">
+              <label class="fl">Até</label>
+              <input class="fi" type="date" id="ev-filtro-ate" onchange="renderEventos()" style="width:136px">
+            </div>
+            <button type="button" class="btn bsec" onclick="limparFiltrosEv()" style="margin-bottom:1px">✕ Limpar</button>
+          </div>
+        </div>
+        <div class="card" style="padding:0">
+          <div class="table-wrap">
+            <table><thead><tr>
+              <th>Evento</th><th>Data</th><th>Convidados</th>
+              <th class="fin-only">Contrato</th>
+              <th class="fin-only">Pago</th>
+              <th class="fin-only">Em aberto</th>
+              <th>Status</th><th></th>
+            </tr></thead>
+            <tbody id="ev-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div id="ev-detalhe-view" style="display:none"></div>
+    </div>
+
+    <!-- ── ORÇAMENTOS ── -->
+    <div class="page" id="page-orcamentos">
+      <div class="topbar">
+        <div><div class="ptitle">Orçamentos & Propostas</div><div class="psub">Funil de vendas com follow-up.</div></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn bsec" onclick="openModal('novoFollowup')">📅 Agendar Follow-up</button>
+          <button class="btn bp" onclick="openModal('novoOrc')">+ Nova Proposta</button>
+        </div>
+      </div>
+      <div id="orc-alerta" class="hidden" style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:10px;background:var(--danger-bg);border:.5px solid var(--danger);margin-bottom:14px;font-size:13px;color:var(--danger)"></div>
+      <div class="tabs">
+        <button class="tab active" data-orc-tab="funil">Funil</button>
+        <button class="tab" data-orc-tab="followups">Follow-ups</button>
+        <button class="tab" data-orc-tab="historico">Histórico</button>
+        <button class="tab" data-orc-tab="lista">Todas as propostas</button>
+      </div>
+      <div class="tabcontent active" id="orc-tab-funil"><div class="funnel" id="funil-board"></div></div>
+      <div class="tabcontent" id="orc-tab-followups"><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px"><div><div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px">Pendentes</div><div id="fu-pendentes"></div></div><div><div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px">Próximos</div><div id="fu-proximos"></div></div></div></div>
+      <div class="tabcontent" id="orc-tab-historico"><div class="card"><div class="ctitle">Histórico de contatos<button class="btn bsec bsm" onclick="openModal('novoContato')">+ Registrar</button></div><div id="hist-list"></div></div></div>
+      <div class="tabcontent" id="orc-tab-lista"><div class="card" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Tipo</th><th>Data</th><th class="fin-only">Valor</th><th>Etapa</th><th>Último contato</th><th></th></tr></thead><tbody id="orc-tbody"></tbody></table></div></div></div>
+    </div>
+
+    <!-- ── CLIENTES ── -->
+    <div class="page" id="page-clientes">
+      <div class="topbar">
+        <div><div class="ptitle">Clientes</div><div class="psub">Cadastro e histórico.</div></div>
+        <button class="btn bp" onclick="openModal('novoCliente')">+ Novo Cliente</button>
+      </div>
+      <div class="card" style="padding:0"><div class="table-wrap">
+        <table><thead><tr><th>Cliente</th><th>Contato</th><th>Eventos</th><th class="fin-only">Total pago</th><th>Último evento</th><th></th></tr></thead>
+        <tbody id="cli-tbody"></tbody></table>
+      </div></div>
+    </div>
+
+    <!-- ── SERVIÇOS ── -->
+    <div class="page" id="page-servicos">
+      <div class="topbar">
+        <div><div class="ptitle">Serviços & Produtos</div><div class="psub">Cardápio, fichas técnicas e precificação.</div></div>
+        <button class="btn bp" onclick="openModal('novoProduto')">+ Novo Item</button>
+      </div>
+      <div class="sgrid" style="grid-template-columns:repeat(3,1fr)" id="svc-stats"></div>
+      <div class="card" style="padding:0"><div class="table-wrap">
+        <table><thead><tr><th>Item</th><th>Categoria</th><th>Custo/pessoa</th><th>Preço/pessoa</th><th>Margem</th><th></th></tr></thead>
+        <tbody id="svc-tbody"></tbody></table>
+      </div></div>
+    </div>
+
+    <!-- ── FINANCEIRO ── -->
+    <div class="page fin-only" id="page-financeiro">
+      <div class="topbar">
+        <div><div class="ptitle">Financeiro</div><div class="psub">Contas e lançamentos.</div></div>
+        <button class="btn bp" onclick="openModal('novoLanc')">+ Lançamento</button>
+      </div>
+      <div class="sgrid" style="grid-template-columns:repeat(3,1fr)" id="fin-stats"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="card"><div class="ctitle">Contas bancárias</div><div id="fin-contas"></div></div>
+        <div class="card"><div class="ctitle">Últimos lançamentos</div><div id="fin-lanc-list"></div></div>
+      </div>
+    </div>
+
+    <!-- ── CONCILIAÇÃO ── -->
+    <div class="page fin-only" id="page-conciliacao">
+      <div class="topbar"><div><div class="ptitle">Conciliação OFX</div><div class="psub">Importe o extrato e bata com os lançamentos.</div></div></div>
+      <div class="card">
+        <div class="ctitle">Importar extrato OFX</div>
+        <div class="uparea" id="ofx-drop" onclick="document.getElementById('ofx-input').click()">
+          <div style="font-size:28px;margin-bottom:8px">🏦</div>
+          <div style="font-size:14px;font-weight:500">Clique para importar arquivo OFX</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Exporte pelo internet banking e importe aqui</div>
+        </div>
+        <input type="file" id="ofx-input" accept=".ofx,.OFX" style="display:none" onchange="processOFX(this)">
+        <div id="ofx-result" style="display:none;margin-top:16px"></div>
+      </div>
+    </div>
+
+    <!-- ── IMPORTADOR ── -->
+    <div class="page" id="page-importador">
+      <div class="topbar"><div><div class="ptitle">Importar dados</div><div class="psub">Traga seus dados do ME Eventos para o Santa Maria.</div></div></div>
+      <div class="card">
+        <div class="ctitle">Importar do ME Eventos (Excel / CSV)</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px" id="import-type-sel"></div>
+        <div class="uparea" onclick="document.getElementById('import-input').click()">
+          <div style="font-size:28px;margin-bottom:8px">📂</div>
+          <div style="font-size:14px;font-weight:500">Clique para selecionar o arquivo exportado</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Excel (.xlsx, .xls) ou CSV — como exportado do ME Eventos</div>
+        </div>
+        <input type="file" id="import-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleImportFile(this)">
+        <div id="import-area" style="margin-top:16px"></div>
+      </div>
+    </div>
+
+    <!-- ── RELATÓRIOS ── -->
+    <div class="page fin-only" id="page-relatorios">
+      <div class="topbar"><div><div class="ptitle">Relatórios</div><div class="psub">Visão gerencial do negócio.</div></div></div>
+      <div class="sgrid" style="grid-template-columns:repeat(3,1fr)" id="rel-stats"></div>
+      <div class="card"><div class="ctitle">Faturamento mensal</div><div style="display:flex;align-items:flex-end;gap:6px;height:80px" id="rel-chart"></div><div style="display:flex;gap:0;margin-top:6px" id="rel-chart-labels"></div></div>
+      <div class="card"><div class="ctitle">Resumo por evento</div><div class="table-wrap"><table><thead><tr><th>Evento</th><th>Data</th><th>Convidados</th><th>Valor</th><th>Recebido</th><th>Status</th></tr></thead><tbody id="rel-tbody"></tbody></table></div></div>
+    </div>
+
+  </main>
+ </div>
+</div>
+
+<!-- ── MODAIS ── -->
+<div class="moverlay" id="modal-addSvcEvento"><div class="modal modal-sm">
+  <div class="mtitle">Adicionar item ao evento<button class="mclose" onclick="closeModal('addSvcEvento')">✕</button></div>
+  <div class="fg">
+    <label class="fl">Produto / Serviço do catálogo</label>
+    <select class="fi" id="asvc-prod" onchange="preencherSvcEvento()">
+      <option value="">-- Selecione do catálogo --</option>
+    </select>
+  </div>
+  <div class="fg">
+    <label class="fl">Ou digite manualmente</label>
+    <input class="fi" id="asvc-desc" placeholder="Descrição do item">
+  </div>
+  <div class="fgrid3">
+    <div class="fg"><label class="fl">Quantidade</label><input class="fi" type="number" id="asvc-qtd" value="1" min="1" step="1" oninput="calcSvcTotal()"></div>
+    <div class="fg"><label class="fl">Valor unitário (R$)</label><input class="fi" type="number" id="asvc-val" placeholder="0" step="0.01" oninput="calcSvcTotal()"></div>
+    <div class="fg"><label class="fl">Total</label><input class="fi" id="asvc-total" readonly style="background:var(--success-bg);color:var(--success);font-weight:500"></div>
+  </div>
+  <div class="fg"><label class="fl">Observação</label><input class="fi" id="asvc-obs" placeholder="Ex: inclui montagem, 180 pessoas..."></div>
+  <div class="mfoot">
+    <button type="button" class="btn bsec" onclick="closeModal('addSvcEvento')">Cancelar</button>
+    <button type="button" class="btn bp" onclick="confirmarAddSvc()">Adicionar</button>
+  </div>
+</div></div>
+
+<div class="moverlay" id="modal-editModelo"><div class="modal">
+  <div class="mtitle" id="edit-modelo-title">Editar modelo<button class="mclose" onclick="closeModal('editModelo')">✕</button></div>
+  <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Edite o conteúdo do modelo. Use as variáveis entre colchetes — elas serão substituídas pelos dados do evento ao gerar o documento.</div>
+  <div style="background:var(--info-bg);border-radius:9px;padding:10px 14px;font-size:12px;color:var(--info);margin-bottom:14px">
+    Variáveis disponíveis: <strong>[CLIENTE]</strong> [EVENTO] [DATA] [LOCAL] [CONVIDADOS] [VALOR] [EMPRESA]
+  </div>
+  <div class="fg"><label class="fl">Nome do modelo</label><input class="fi" id="em-nome" placeholder="Ex: Contrato padrão 2025"></div>
+  <div class="fg"><label class="fl">Conteúdo do modelo</label><textarea class="fi" id="em-conteudo" rows="16" style="font-family:monospace;font-size:12px" placeholder="Digite ou cole aqui o texto do seu contrato/recibo..."></textarea></div>
+  <div class="mfoot">
+    <button type="button" class="btn bsec" onclick="closeModal('editModelo')">Cancelar</button>
+    <button type="button" class="btn bsm" style="background:var(--danger-bg);color:var(--danger);border:none;margin-right:auto" onclick="excluirModelo()">Excluir modelo</button>
+    <button type="button" class="btn bp" onclick="salvarModelo()">Salvar modelo</button>
+  </div>
+</div></div>
+<div class="moverlay" id="modal-novoEvento"><div class="modal" style="max-height:90vh;overflow-y:auto">
+  <div class="mtitle">Novo Evento<button class="mclose" onclick="closeModal('novoEvento')">✕</button></div>
+  <div class="fgrid2"><div class="fg"><label class="fl">Nome do evento *</label><input class="fi" id="ev-nome" placeholder="Casamento Silva & Costa"></div><div class="fg"><label class="fl">Tipo</label><select class="fi" id="ev-tipo"><option>Casamento</option><option>Bodas</option><option>Aniversário</option><option>Corporativo</option><option>Outro</option></select></div></div>
+  <div class="fgrid3"><div class="fg"><label class="fl">Data *</label><input class="fi" type="date" id="ev-data"></div><div class="fg"><label class="fl">Horário</label><input class="fi" type="time" id="ev-hora" value="19:00"></div><div class="fg"><label class="fl">Convidados</label><input class="fi" type="number" id="ev-conv" placeholder="150" min="0"></div></div>
+  <div class="fgrid2"><div class="fg"><label class="fl">Local / Espaço</label><input class="fi" id="ev-local" placeholder="Nome do salão"></div><div class="fg fin-only"><label class="fl">Valor total (R$)</label><input class="fi" type="number" id="ev-valor" placeholder="0" step="0.01" min="0"></div></div>
+  <div class="fg">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <label class="fl">Cliente</label>
+      <button type="button" class="btn bsec bsm" id="btn-novo-cli-inline" onclick="toggleNovoClienteInline()" style="font-size:10px;padding:3px 9px">+ Novo cliente</button>
+    </div>
+    <select class="fi" id="ev-cliente"><option value="">Selecione o cliente...</option></select>
+    <div id="novo-cli-inline" style="display:none;margin-top:10px;background:var(--cream);border-radius:10px;padding:14px;border:.5px solid var(--border)">
+      <div style="font-size:11px;font-weight:500;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">Novo cliente</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="fg" style="margin:0"><label class="fl">Nome *</label><input class="fi" id="ev-cli-nome" placeholder="Nome completo"></div>
+        <div class="fg" style="margin:0"><label class="fl">Telefone *</label><input class="fi" id="ev-cli-tel" placeholder="(11) 99999-9999"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="fg" style="margin:0"><label class="fl">E-mail</label><input class="fi" id="ev-cli-email" type="email" placeholder="email@exemplo.com"></div>
+        <div class="fg" style="margin:0"><label class="fl">CPF / CNPJ</label><input class="fi" id="ev-cli-doc" placeholder="000.000.000-00"></div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" class="btn bsec bsm" onclick="toggleNovoClienteInline()">Cancelar</button>
+        <button type="button" class="btn bp bsm" onclick="salvarClienteInline()">Salvar e selecionar</button>
+      </div>
+    </div>
+  </div>
+  <div class="fg"><label class="fl">Observações</label><textarea class="fi" id="ev-obs" placeholder="Detalhes especiais..."></textarea></div>
+  <div class="mfoot"><button type="button" class="btn bsec" onclick="closeModal('novoEvento')">Cancelar</button><button type="button" class="btn bp" onclick="salvarEvento()">Salvar Evento</button></div>
+</div></div>
+
+<div class="moverlay" id="modal-novoCliente"><div class="modal modal-sm">
+  <div class="mtitle">Novo Cliente<button class="mclose" onclick="closeModal('novoCliente')">✕</button></div>
+  <div class="fgrid2"><div class="fg"><label class="fl">Nome completo *</label><input class="fi" id="cli-nome" placeholder="Nome"></div><div class="fg"><label class="fl">CPF / CNPJ</label><input class="fi" id="cli-doc" placeholder="000.000.000-00"></div></div>
+  <div class="fgrid2"><div class="fg"><label class="fl">Telefone / WhatsApp *</label><input class="fi" id="cli-tel" placeholder="(11) 99999-9999"></div><div class="fg"><label class="fl">E-mail</label><input class="fi" type="email" id="cli-email" placeholder="email@exemplo.com"></div></div>
+  <div class="fg"><label class="fl">Endereço</label><input class="fi" id="cli-end" placeholder="Rua, número, bairro, cidade"></div>
+  <div class="fg"><label class="fl">Observações</label><textarea class="fi" id="cli-obs" rows="2"></textarea></div>
+  <div class="mfoot"><button class="btn bsec" onclick="closeModal('novoCliente')">Cancelar</button><button type="button" class="btn bp" onclick="salvarCliente()">Salvar</button></div>
+</div></div>
+
+<div class="moverlay" id="modal-novoOrc"><div class="modal modal-sm">
+  <div class="mtitle">Nova Proposta<button class="mclose" onclick="closeModal('novoOrc')">✕</button></div>
+  <div class="fgrid2"><div class="fg"><label class="fl">Nome do cliente *</label><input class="fi" id="orc-cli"></div><div class="fg"><label class="fl">Telefone (WhatsApp)</label><input class="fi" id="orc-tel" placeholder="(11) 99999-9999"></div></div>
+  <div class="fgrid2"><div class="fg"><label class="fl">Tipo</label><select class="fi" id="orc-tipo"><option>Casamento</option><option>Bodas</option><option>Aniversário</option><option>Corporativo</option></select></div><div class="fg"><label class="fl">Etapa</label><select class="fi" id="orc-etapa"><option value="lead">Lead</option><option value="proposta">Proposta enviada</option><option value="negociacao">Negociação</option></select></div></div>
+  <div class="fgrid3"><div class="fg"><label class="fl">Data pretendida</label><input class="fi" type="date" id="orc-data"></div><div class="fg"><label class="fl">Convidados</label><input class="fi" type="number" id="orc-conv" placeholder="150"></div><div class="fg"><label class="fl">Valor estimado (R$)</label><input class="fi" type="number" id="orc-val" placeholder="0"></div></div>
+  <div class="fg"><label class="fl">1º follow-up em</label><select class="fi" id="orc-fu"><option value="1">1 dia</option><option value="2">2 dias</option><option value="3" selected>3 dias</option><option value="5">5 dias</option><option value="7">7 dias</option></select></div>
+  <div class="fg"><label class="fl">Observações</label><textarea class="fi" id="orc-obs" rows="2"></textarea></div>
+  <div class="mfoot"><button class="btn bsec" onclick="closeModal('novoOrc')">Cancelar</button><button class="btn bp" onclick="salvarOrc()">Salvar & Agendar Follow-up</button></div>
+</div></div>
+
+<div class="moverlay" id="modal-novoFollowup"><div class="modal modal-sm">
+  <div class="mtitle">Agendar Follow-up<button class="mclose" onclick="closeModal('novoFollowup')">✕</button></div>
+  <div class="fg"><label class="fl">Orçamento / Cliente</label><select class="fi" id="fu-orc"></select></div>
+  <div class="fgrid2"><div class="fg"><label class="fl">Data *</label><input class="fi" type="date" id="fu-data"></div><div class="fg"><label class="fl">Horário</label><input class="fi" type="time" id="fu-hora" value="10:00"></div></div>
+  <div class="fg"><label class="fl">Tipo</label><select class="fi" id="fu-tipo"><option value="whatsapp">💬 WhatsApp</option><option value="ligacao">📞 Ligação</option><option value="reuniao">🤝 Reunião</option></select></div>
+  <div class="fg"><label class="fl">Pauta / Objetivo</label><textarea class="fi" id="fu-pauta" rows="2"></textarea></div>
+  <div class="fg"><label class="fl">Mensagem sugerida (WhatsApp)</label><textarea class="fi" id="fu-msg" rows="3"></textarea></div>
+  <div class="mfoot"><button class="btn bsec" onclick="closeModal('novoFollowup')">Cancelar</button><button class="btn bp" onclick="salvarFollowup()">Agendar</button></div>
+</div></div>
+
+<div class="moverlay" id="modal-novoContato"><div class="modal modal-sm">
+  <div class="mtitle">Registrar Contato<button class="mclose" onclick="closeModal('novoContato')">✕</button></div>
+  <div class="fg"><label class="fl">Orçamento / Cliente</label><select class="fi" id="cont-orc"></select></div>
+  <div class="fgrid2"><div class="fg"><label class="fl">Canal</label><select class="fi" id="cont-canal"><option value="whatsapp">💬 WhatsApp</option><option value="ligacao">📞 Ligação</option><option value="reuniao">🤝 Reunião</option></select></div><div class="fg"><label class="fl">Data</label><input class="fi" type="date" id="cont-data"></div></div>
+  <div class="fg"><label class="fl">Resultado</label><select class="fi" id="cont-result"><option value="interesse">Com interesse</option><option value="pendente">Aguardando decisão</option><option value="reagendou">Pediu para retornar</option><option value="fechou">Fechou negócio!</option><option value="perdido">Sem interesse</option></select></div>
+  <div class="fg"><label class="fl">Anotações</label><textarea class="fi" id="cont-obs" rows="3" placeholder="O que foi conversado, objeções..."></textarea></div>
+  <div class="fg"><label class="fl">Agendar próximo follow-up em</label><select class="fi" id="cont-prox"><option value="0">Não agendar</option><option value="2">2 dias</option><option value="3" selected>3 dias</option><option value="5">5 dias</option><option value="7">7 dias</option><option value="14">14 dias</option></select></div>
+  <div class="mfoot"><button class="btn bsec" onclick="closeModal('novoContato')">Cancelar</button><button class="btn bp" onclick="salvarContato()">Registrar</button></div>
+</div></div>
+
+<div class="moverlay" id="modal-novoProduto"><div class="modal">
+  <div class="mtitle">Novo Item / Serviço<button class="mclose" onclick="closeModal('novoProduto')">✕</button></div>
+  <div class="fgrid2"><div class="fg"><label class="fl">Nome *</label><input class="fi" id="prod-nome" placeholder="Ex: Buffet jantar completo"></div><div class="fg"><label class="fl">Categoria</label><select class="fi" id="prod-cat"><option value="buffet">🍽 Buffet</option><option value="bebidas">🥂 Bebidas</option><option value="sobremesas">🎂 Sobremesas</option><option value="entrada">🥗 Entradas</option><option value="decoracao">💐 Decoração</option><option value="musica">🎵 Música / DJ</option><option value="foto">📷 Foto & Vídeo</option><option value="cerimonial">🎀 Cerimonial</option><option value="outros">📦 Outros</option></select></div></div>
+  <div class="fgrid3"><div class="fg"><label class="fl">Custo/pessoa (R$)</label><input class="fi" type="number" id="prod-custo" step="0.01" oninput="calcProdMargem()"></div><div class="fg"><label class="fl">Preço/pessoa (R$)</label><input class="fi" type="number" id="prod-preco" step="0.01" oninput="calcProdMargem()"></div><div class="fg"><label class="fl">Rendimento</label><input class="fi" type="number" id="prod-rend" value="1" step="0.1"></div></div>
+  <div style="background:var(--gold-l);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;display:flex;align-items:center;gap:8px">Margem: <strong id="prod-margem-prev">—</strong></div>
+  <div class="fg"><label class="fl">Descrição</label><textarea class="fi" id="prod-desc" rows="2"></textarea></div>
+  <div class="divider"></div>
+  <div style="font-size:12px;font-weight:500;margin-bottom:10px">📋 Ficha Técnica</div>
+  <div class="fg"><label class="fl">Ingredientes / Composição</label><textarea class="fi" id="prod-ingr" rows="3"></textarea></div>
+  <div class="fgrid2"><div class="fg"><label class="fl">Modo de preparo</label><textarea class="fi" id="prod-preparo" rows="3"></textarea></div><div><div class="fg"><label class="fl">Tempo de preparo</label><input class="fi" id="prod-tempo" placeholder="Ex: 2h antes"></div><div class="fg"><label class="fl">Temperatura de serviço</label><input class="fi" id="prod-temp" placeholder="Ex: Quente 65°C"></div></div></div>
+  <div class="fg"><label class="fl">Alergênicos</label><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px" id="alerg-checks"></div></div>
+  <div class="fg"><label class="fl">Observações / Variações</label><input class="fi" id="prod-obs"></div>
+  <div class="mfoot"><button class="btn bsec" onclick="closeModal('novoProduto')">Cancelar</button><button class="btn bp" onclick="salvarProduto()">Salvar</button></div>
+</div></div>
+
+<div class="moverlay" id="modal-novoLanc"><div class="modal modal-sm">
+  <div class="mtitle">Novo Lançamento<button class="mclose" onclick="closeModal('novoLanc')">✕</button></div>
+  <div class="fgrid2"><div class="fg"><label class="fl">Tipo</label><select class="fi" id="lanc-tipo"><option value="receita">Receita</option><option value="despesa">Despesa</option></select></div><div class="fg"><label class="fl">Conta</label><select class="fi" id="lanc-conta"></select></div></div>
+  <div class="fgrid2"><div class="fg"><label class="fl">Valor (R$) *</label><input class="fi" type="number" id="lanc-valor" step="0.01" min="0"></div><div class="fg"><label class="fl">Data *</label><input class="fi" type="date" id="lanc-data"></div></div>
+  <div class="fg"><label class="fl">Descrição *</label><input class="fi" id="lanc-desc" placeholder="Ex: Pagamento Silva & Pereira - Sinal"></div>
+  <div class="fgrid2"><div class="fg"><label class="fl">Categoria</label><select class="fi" id="lanc-cat"><option>Receita de evento</option><option>Fornecedor</option><option>Pessoal</option><option>Aluguel</option><option>Marketing</option><option>Outros</option></select></div><div class="fg"><label class="fl">Forma de pagamento</label><select class="fi" id="lanc-forma"><option>PIX</option><option>Transferência</option><option>Dinheiro</option><option>Cartão</option><option>Boleto</option></select></div></div>
+  <div class="fg"><label class="fl">Observação</label><input class="fi" id="lanc-obs"></div>
+  <div class="mfoot"><button class="btn bsec" onclick="closeModal('novoLanc')">Cancelar</button><button class="btn bp" onclick="salvarLanc()">Salvar</button></div>
+</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ══════════════════════════════════════════════════════════════════
+// CONFIGURAÇÃO SUPABASE
+// ══════════════════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://zdfhyrqbpruxpjnvzbmr.supabase.co';
+const ZAPSIGN_TOKEN = 'b4ef5c08-b314-49d0-9f72-8159a7a11fe154147000-c334-4c7b-81bb-0706d7b83a2c';
+const ZAPSIGN_API   = 'https://api.zapsign.com.br/api/v1';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkZmh5cnFicHJ1eHBqbnZ6Ym1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0MTY3NDYsImV4cCI6MjA5MTk5Mjc0Nn0.cKVvlhiBjJWKoroGthEwsE6F69LgzE_PmhAczEVzRu4';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── HELPERS ──────────────────────────────────────────────────────
+const today = () => new Date().toISOString().split('T')[0];
+const daysFrom = n => { const d=new Date(); d.setDate(d.getDate()+n); return d.toISOString().split('T')[0]; };
+const diffDays = iso => Math.round((new Date()-new Date(iso+'T12:00:00'))/(864e5));
+const fmtDate = iso => iso ? new Date(iso+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}) : '--';
+const fmtMoney = v => 'R$'+(Number(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
+const ini = str => str?.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase()||'?';
+
+const STATUS_MAP = {confirmado:{l:'Confirmado',c:'bi'},realizado:{l:'Realizado',c:'bs'},pendente:{l:'Pendente',c:'bw'},cancelado:{l:'Cancelado',c:'bd'}};
+const ETAPA_MAP  = {lead:{l:'Lead',c:'bi'},proposta:{l:'Proposta',c:'bw'},negociacao:{l:'Negociação',c:'bg'},fechado:{l:'Fechado',c:'bs'}};
+const CANAL_ICON = {whatsapp:'💬',ligacao:'📞',reuniao:'🤝',email:'✉'};
+const RESULT_MAP = {interesse:{l:'Com interesse',c:'bs'},pendente:{l:'Aguardando',c:'bw'},reagendou:{l:'Retornar depois',c:'bi'},fechou:{l:'Fechou! 🎉',c:'bs'},perdido:{l:'Sem interesse',c:'bd'}};
+const ALERG_LIST = ['Glúten','Lactose','Ovos','Frutos do mar','Amendoim','Soja','Nozes','Mostarda'];
+const CAT_ICONS  = {buffet:'🍽',bebidas:'🥂',sobremesas:'🎂',entrada:'🥗',decoracao:'💐',musica:'🎵',foto:'📷',cerimonial:'🎀',outros:'📦'};
+const MESES      = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const DIAS       = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+
+let currentUser = null;
+let isDono = false;
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let importType = 'clientes';
+
+// ── SUPABASE CACHE ────────────────────────────────────────────────
+let CACHE = { clientes:[], eventos:[], orcamentos:[], followups:[], historico:[], produtos:[], contas:[], lancamentos:[] };
+
+async function loadAll() {
+  const [cli, ev, orc, fu, hist, prod, contas, lanc, svcs] = await Promise.all([
+    sb.from('clientes').select('*').order('nome'),
+    sb.from('eventos').select('*,clientes(nome)').order('data'),
+    sb.from('orcamentos').select('*').order('created_at',{ascending:false}),
+    sb.from('followups').select('*').order('data'),
+    sb.from('contatos_historico').select('*').order('data',{ascending:false}),
+    sb.from('produtos').select('*').order('nome'),
+    sb.from('contas').select('*'),
+    sb.from('lancamentos').select('*').order('data',{ascending:false}).limit(200),
+    sb.from('evento_servicos').select('*'),
+  ]);
+  CACHE.clientes        = cli.data||[];
+  CACHE.eventos         = ev.data||[];
+  CACHE.orcamentos      = orc.data||[];
+  CACHE.followups       = fu.data||[];
+  CACHE.historico       = hist.data||[];
+  CACHE.produtos        = prod.data||[];
+  CACHE.contas          = contas.data||[];
+  CACHE.lancamentos     = lanc.data||[];
+  CACHE.eventoServicos  = svcs.data||[];
+}
+
+// Calcula valor real do contrato de um evento (soma servicos - desconto + adicional)
+function calcValorContrato(evId) {
+  const svcs = CACHE.eventoServicos.filter(s=>s.evento_id===evId);
+  const totalSvc = svcs.reduce((a,s)=>a+Number(s.valor||0),0);
+  const ev = CACHE.eventos.find(e=>e.id===evId);
+  const desc = Number((ev&&ev.desconto)||0);
+  const adic = Number((ev&&ev.adicional)||0);
+  return totalSvc > 0 ? totalSvc - desc + adic : Number((ev&&ev.valor)||0);
+}
+
+// ── AUTH ──────────────────────────────────────────────────────────
+async function initAuth() {
+  const { data:{ session } } = await sb.auth.getSession();
+  if(session?.user) { await onLogin(session.user); } else { showLogin(); }
+  sb.auth.onAuthStateChange(async (_,sess) => {
+    if(sess?.user) { await onLogin(sess.user); } else { showLogin(); }
+  });
+}
+
+async function doLogin() {
+  const email = document.getElementById('lemail').value.trim();
+  const pass  = document.getElementById('lpass').value;
+  const err   = document.getElementById('lerr');
+  err.textContent='';
+  const { error } = await sb.auth.signInWithPassword({email,password:pass});
+  if(error) err.textContent = 'E-mail ou senha incorretos.';
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+}
+
+async function onLogin(user) {
+  const { data: perfil } = await sb.from('perfis').select('*').eq('id',user.id).single();
+  currentUser = perfil||{ nome: user.email.split('@')[0], tipo:'colaborador' };
+  isDono = currentUser.tipo === 'dono';
+  document.getElementById('sname').textContent = currentUser.nome;
+  document.getElementById('srole').textContent = isDono ? 'Administrador' : 'Colaborador';
+  document.getElementById('savatar').textContent = ini(currentUser.nome);
+  document.querySelectorAll('.fin-only').forEach(el => el.style.display = isDono ? '' : 'none');
+  document.getElementById('loading').style.display='none';
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  await loadAll();
+  renderPage('dashboard');
+  setupNav();
+  setupModals();
+  loadClientesSelect();
+  loadContasSelect();
+  renderAlergChecks();
+  renderImportTypes();
+  updateFuBadge();
+}
+
+function showLogin() {
+  document.getElementById('loading').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app').style.display='none';
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────────
+function setupNav() {
+  document.querySelectorAll('.ni[data-page]').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
+      el.classList.add('active');
+      renderPage(el.dataset.page);
+    });
+  });
+}
+
+function renderPage(p) {
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  const pg = document.getElementById('page-'+p);
+  if(pg) pg.classList.add('active');
+  if(p==='dashboard')   renderDashboard();
+  if(p==='agenda') {
+    renderCalendar();
+    setTimeout(function() {
+      const saved = localStorage.getItem('gcal_embed_id') || GCAL_DEFAULT_ID;
+      const setupCard = document.getElementById('gcal-setup-card');
+      const iframeWrap = document.getElementById('gcal-iframe-wrap');
+      if(setupCard) setupCard.style.display = 'none';
+      if(iframeWrap) iframeWrap.style.display = 'block';
+      renderIframe(saved);
+    }, 50);
+  }
+  if(p==='eventos')     renderEventos();
+  if(p==='orcamentos')  renderOrcamentos();
+  if(p==='clientes')    renderClientes();
+  if(p==='servicos')    renderServicos();
+  if(p==='financeiro')  renderFinanceiro();
+  if(p==='relatorios')  renderRelatorios();
+}
+
+// ── MODALS ────────────────────────────────────────────────────────
+function setupModals() {
+  document.querySelectorAll('.moverlay').forEach(m => {
+    m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); });
+  });
+  // Aba orçamentos tabs
+  document.querySelectorAll('[data-orc-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-orc-tab]').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('[id^="orc-tab-"]').forEach(t=>t.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('orc-tab-'+btn.dataset.orcTab).classList.add('active');
+    });
+  });
+}
+function openModal(id) {
+  if(id==='novoFollowup'||id==='novoContato') {
+    const selId = id==='novoFollowup'?'fu-orc':'cont-orc';
+    document.getElementById(selId).innerHTML = CACHE.orcamentos.filter(o=>o.etapa!=='fechado').map(o=>`<option value="${o.id}">${o.cliente}</option>`).join('');
+    if(id==='novoFollowup') document.getElementById('fu-data').value=daysFrom(3);
+    if(id==='novoContato')  document.getElementById('cont-data').value=today();
+  }
+  if(id==='novoLanc') document.getElementById('lanc-data').value=today();
+  document.getElementById('modal-'+id).classList.add('open');
+}
+function closeModal(id) { document.getElementById('modal-'+id).classList.remove('open'); }
+
+// ── DASHBOARD ────────────────────────────────────────────────────
+function renderDashboard() {
+  const now = new Date();
+  const mes = now.getMonth(), ano = now.getFullYear();
+  const greet = now.getHours()<12?'Bom dia':now.getHours()<18?'Boa tarde':'Boa noite';
+  document.getElementById('dash-greeting').textContent = greet+', '+currentUser.nome.split(' ')[0]+'! 👋';
+  document.getElementById('dash-sub').textContent = 'Aqui está o resumo do seu negócio.';
+
+  const evMes = CACHE.eventos.filter(e => { const d=new Date(e.data+'T12:00:00'); return d.getMonth()===mes&&d.getFullYear()===ano; });
+  document.getElementById('ds-eventos').textContent = evMes.length;
+
+  const futuros = CACHE.eventos.filter(e=>e.data>=today()&&e.status!=='cancelado').sort((a,b)=>a.data.localeCompare(b.data));
+  if(futuros.length) {
+    const prox = futuros[0];
+    const dias = Math.ceil((new Date(prox.data+'T12:00:00')-new Date())/(864e5));
+    document.getElementById('ds-proximo').textContent = dias===0?'Hoje!':dias+'d';
+    document.getElementById('ds-proximo-m').textContent = fmtDate(prox.data)+' · '+prox.nome;
+  } else {
+    document.getElementById('ds-proximo').textContent='--';
+    document.getElementById('ds-proximo-m').textContent='Nenhum evento futuro';
+  }
+
+  if(isDono) {
+    const recMes = CACHE.lancamentos.filter(l=>l.tipo==='receita'&&l.data&&l.data.startsWith(ano+'-'+(mes+1).toString().padStart(2,'0'))).reduce((a,l)=>a+Number(l.valor),0);
+    document.getElementById('ds-rec').textContent=fmtMoney(recMes);
+  }
+
+  const fuPend = CACHE.followups.filter(f=>!f.feito&&f.data<=today());
+  document.getElementById('ds-fu').textContent=fuPend.length;
+  document.getElementById('ds-fu-m').textContent=fuPend.length?fuPend.length+' aguardando':'Em dia ✓';
+
+  // Lista próximos eventos
+  const listEl = document.getElementById('dash-eventos-list');
+  listEl.innerHTML = futuros.slice(0,4).map(ev=>{
+    const dias=Math.ceil((new Date(ev.data+'T12:00:00')-new Date())/(864e5));
+    const s=STATUS_MAP[ev.status]||{l:ev.status,c:'bn'};
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--cream);border-radius:9px;margin-bottom:7px">
+      <div><div style="font-weight:500;font-size:13px">${ev.nome}</div><div style="font-size:11px;color:var(--muted)">${fmtDate(ev.data)} · ${ev.convidados||0} convidados</div></div>
+      <span class="badge ${dias<=3?'bw':'bn'}">${dias===0?'Hoje':dias+'d'}</span>
+    </div>`;
+  }).join('') || '<div class="empty">Nenhum evento futuro</div>';
+
+  // Pagamentos pendentes
+  if(isDono) {
+    const pendentes = CACHE.lancamentos.filter(l=>l.status==='pendente'||l.status==='atrasado').slice(0,4);
+    document.getElementById('dash-pag-list').innerHTML = pendentes.map(l=>{
+      const atras = l.status==='atrasado';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 11px;border-radius:8px;background:${atras?'var(--danger-bg)':'var(--warn-bg)'};margin-bottom:6px">
+        <div><div style="font-size:13px;font-weight:500">${l.descricao}</div><div style="font-size:11px;color:var(--muted)">${fmtDate(l.data)}</div></div>
+        <div style="font-size:13px;font-weight:500;color:${atras?'var(--danger)':'var(--warn)'}">${fmtMoney(l.valor)}</div>
+      </div>`;
+    }).join('')||'<div class="empty">Nenhum pagamento pendente</div>';
+  }
+}
+
+// ── CALENDÁRIO ────────────────────────────────────────────────────
+function renderCalendar() {
+  document.getElementById('cal-label').textContent = MESES[calMonth]+' '+calYear;
+  document.getElementById('cal-hdr').innerHTML = DIAS.map(d=>`<div class="cgh">${d}</div>`).join('');
+  const first = new Date(calYear,calMonth,1).getDay();
+  const days  = new Date(calYear,calMonth+1,0).getDate();
+  const evMap = {};
+  CACHE.eventos.forEach(ev => { const d=new Date(ev.data+'T12:00:00'); if(d.getFullYear()===calYear&&d.getMonth()===calMonth) { evMap[d.getDate()]=evMap[d.getDate()]||[]; evMap[d.getDate()].push(ev); } });
+  const todayStr = today();
+  let html='';
+  for(let i=0;i<first;i++) { const d=new Date(calYear,calMonth,-first+i+1).getDate(); html+=`<div class="cgd other-month"><div class="cgd-num">${d}</div></div>`; }
+  for(let d=1;d<=days;d++) {
+    const ds=calYear+'-'+(calMonth+1).toString().padStart(2,'0')+'-'+d.toString().padStart(2,'0');
+    const isToday=ds===todayStr;
+    const evs=evMap[d]||[];
+    html+=`<div class="cgd${isToday?' today':''}"><div class="cgd-num">${d}</div>${evs.map(ev=>{const label=ev.nome.replace(/Casamento |Bodas |Aniversário /i,'');const gcalCls=ev._gcal?' gcal':'';const cls=ev.status==='realizado'?' realizado':ev.tipo==='Google Agenda'?' gcal':ev.tipo!=='Casamento'?' outro':'';return`<div class="cev${cls}" title="${ev.nome}">${label}</div>`;}).join('')}</div>`;
+  }
+  document.getElementById('cal-grid').innerHTML=html;
+}
+function calNav(dir) { calMonth+=dir; if(calMonth>11){calMonth=0;calYear++;} if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); }
+
+// ── EVENTOS ───────────────────────────────────────────────────────
+function filtrarEventos() {
+  const busca = (document.getElementById('ev-busca')||{value:''}).value.toLowerCase();
+  const mes   = (document.getElementById('ev-filtro-mes')||{value:''}).value;
+  const de    = (document.getElementById('ev-filtro-de')||{value:''}).value;
+  const ate   = (document.getElementById('ev-filtro-ate')||{value:''}).value;
+  const MESES_MAP = {Janeiro:0,Fevereiro:1,'Março':2,Abril:3,Maio:4,Junho:5,Julho:6,Agosto:7,Setembro:8,Outubro:9,Novembro:10,Dezembro:11};
+  return CACHE.eventos.filter(ev => {
+    if(ev._gcal) return false;
+    if(busca && !ev.nome.toLowerCase().includes(busca)) return false;
+    const d = ev.data || '';
+    if(mes && MESES_MAP[mes] !== undefined) {
+      const evMes = new Date(d + 'T12:00:00').getMonth();
+      if(evMes !== MESES_MAP[mes]) return false;
+    }
+    if(de  && d < de)  return false;
+    if(ate && d > ate) return false;
+    return true;
+  });
+}
+
+function limparFiltrosEv() {
+  ['ev-busca','ev-filtro-de','ev-filtro-ate'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  const sel = document.getElementById('ev-filtro-mes'); if(sel) sel.value='';
+  renderEventos();
+}
+
+function renderEventos() {
+  document.getElementById('ev-lista-view').style.display='block';
+  document.getElementById('ev-detalhe-view').style.display='none';
+  const evs = filtrarEventos();
+  const totalContrato = evs.reduce((a,e)=>a+calcValorContrato(e.id),0);
+  const totalPago     = evs.reduce((a,e)=>a+CACHE.lancamentos.filter(l=>l.evento_id===e.id&&l.tipo==='receita').reduce((b,l)=>b+Number(l.valor),0),0);
+  const totalAberto   = totalContrato - totalPago;
+  const cols = isDono ? 8 : 5;
+  document.getElementById('ev-tbody').innerHTML =
+    (isDono ? `<tr style="background:var(--cream)">
+      <td colspan="3" style="font-size:12px;color:var(--muted);font-weight:500">Totais — ${evs.length} evento${evs.length!==1?'s':''}</td>
+      <td style="font-size:13px;font-weight:500">${fmtMoney(totalContrato)}</td>
+      <td style="font-size:13px;font-weight:500;color:var(--success)">${fmtMoney(totalPago)}</td>
+      <td style="font-size:13px;font-weight:500;color:var(--warn)">${fmtMoney(totalAberto)}</td>
+      <td colspan="2"></td>
+    </tr>` : '') +
+    (evs.length ? evs.map(ev=>{
+      const s = STATUS_MAP[ev.status]||{l:ev.status,c:'bn'};
+      const pago   = CACHE.lancamentos.filter(l=>l.evento_id===ev.id&&l.tipo==='receita').reduce((a,l)=>a+Number(l.valor),0);
+      const contrato = calcValorContrato(ev.id);
+      const aberto = contrato - pago;
+      return '<tr>' +
+        '<td><div style="font-weight:500">' + ev.nome + '</div><div style="font-size:11px;color:var(--muted)">' + (ev.local||'--') + '</div></td>' +
+        '<td style="white-space:nowrap">' + fmtDate(ev.data) + '</td>' +
+        '<td>' + (ev.convidados||0) + '</td>' +
+        (isDono ?
+          '<td style="font-weight:500">' + fmtMoney(contrato) + '</td>' +
+          '<td style="color:var(--success);font-weight:500">' + fmtMoney(pago) + '</td>' +
+          '<td style="color:' + (aberto>0?'var(--warn)':'var(--success)') + ';font-weight:500">' + fmtMoney(Math.max(0,aberto)) + '</td>'
+        : '') +
+        '<td><span class="badge ' + s.c + '">' + s.l + '</span></td>' +
+        '<td><div style="display:flex;gap:4px">' +
+          '<button type="button" class="btn bsec bsm" data-evid="' + ev.id + '" onclick="verEvento(this.dataset.evid)">Ver</button>' +
+          (isDono ? '<button type="button" class="btn bsm" style="background:var(--danger-bg);color:var(--danger);border:.5px solid var(--danger-bg)" data-evid="' + ev.id + '" onclick="excluirEvento(this.dataset.evid)">✕</button>' : '') +
+        '</div></td>' +
+      '</tr>';
+    }).join('') : '<tr><td colspan="' + cols + '" class="empty">Nenhum evento encontrado</td></tr>');
+}
+
+async function excluirEvento(id) {
+  const ev = CACHE.eventos.find(e=>e.id===id);
+  const nome = ev ? ev.nome : 'este evento';
+  if(!confirm('Excluir "' + nome + '"?\n\nEsta acao nao pode ser desfeita.')) return;
+  const { error } = await sb.from('eventos').delete().eq('id', id);
+  if(error) { alert('Erro ao excluir: ' + error.message); return; }
+  await loadAll();
+  renderEventos();
+  renderDashboard();
+}
+
+async function verEvento(id) {
+  const ev  = CACHE.eventos.find(e=>e.id===id); if(!ev) return;
+  const cli = CACHE.clientes.find(c=>c.id===ev.cliente_id);
+  const s   = STATUS_MAP[ev.status]||{l:ev.status,c:'bn'};
+  const { data: servicos } = await sb.from('evento_servicos').select('*').eq('evento_id',id);
+  const { data: docs }     = await sb.from('evento_documentos').select('*').eq('evento_id',id);
+  const { data: pags }     = await sb.from('lancamentos').select('*').eq('evento_id',id).order('data');
+
+  // Calculos financeiros
+  const totalSvc    = (servicos||[]).reduce((a,x)=>a+Number(x.valor),0);
+  const desconto    = Number(ev.desconto||0);
+  const adicional   = Number(ev.adicional||0);
+  const valorTotal  = totalSvc > 0 ? totalSvc - desconto + adicional : Number(ev.valor||0);
+  const totalPago   = (pags||[]).filter(p=>p.tipo==='receita').reduce((a,p)=>a+Number(p.valor),0);
+  const saldoAberto = Math.max(0, valorTotal - totalPago);
+
+  document.getElementById('ev-lista-view').style.display  = 'none';
+  document.getElementById('ev-detalhe-view').style.display = 'block';
+
+  const waMsg = encodeURIComponent('Ola ' + (cli?cli.nome.split(' ')[0]:'') + '! Aqui e o Santa Maria Buffet. Como posso te ajudar?');
+  const waTel = cli ? (cli.telefone||'').replace(/\D/g,'') : '';
+
+  document.getElementById('ev-detalhe-view').innerHTML =
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">' +
+      '<button class="btn bsec bsm" onclick="renderEventos()">‹ Voltar</button>' +
+      '<div class="ptitle">' + ev.nome + '</div>' +
+      '<span class="badge ' + s.c + '">' + s.l + '</span>' +
+    '</div>' +
+    '<div class="tabs" id="ev-dtabs">' +
+      '<button class="tab active" data-ev-tab="info">Informações</button>' +
+      (isDono ? '<button class="tab" data-ev-tab="fin">Financeiro</button>' : '') +
+      '<button class="tab" data-ev-tab="docs">Contratos & Docs</button>' +
+    '</div>' +
+
+    // ── TAB INFO ──
+    '<div id="ev-tab-info" class="tabcontent active">' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
+        '<div class="card">' +
+          '<div class="ctitle">Dados do evento' +
+            '<button type="button" class="btn bsec bsm" data-evid2="' + id + '" onclick="editarEvento(this.dataset.evid2)">✏ Editar</button>' +
+          '</div>' +
+          '<div style="display:flex;flex-direction:column;gap:0">' +
+            [['Data',fmtDate(ev.data)],['Horario',(ev.horario||'--').slice(0,5)],['Tipo',ev.tipo||'--'],['Local',ev.local||'--'],['Convidados',(ev.convidados||0).toString()],['Status',s.l]].map(([k,v])=>
+              '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:.5px solid var(--border)">' +
+                '<span style="font-size:12px;color:var(--muted)">' + k + '</span>' +
+                '<span style="font-size:13px;font-weight:500">' + v + '</span>' +
+              '</div>'
+            ).join('') +
+          '</div>' +
+        '</div>' +
+        '<div class="card">' +
+          '<div class="ctitle">Cliente' +
+            (cli ?
+              '<div style="display:flex;gap:6px">' +
+                (waTel ? '<a href="https://wa.me/55' + waTel + '?text=' + waMsg + '" target="_blank" class="btn bwa bsm">💬 WhatsApp</a>' : '') +
+                '<button type="button" class="btn bsec bsm" data-cliid="' + cli.id + '" data-evid2="' + id + '" onclick="editarCliente(this.dataset.cliid,this.dataset.evid2)">✏ Editar</button>' +
+              '</div>'
+            : '') +
+          '</div>' +
+          (cli ?
+            '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">' +
+              '<div class="avatar" style="background:var(--rose-l);color:var(--rose-d)">' + ini(cli.nome) + '</div>' +
+              '<div><div style="font-weight:500;font-size:14px">' + cli.nome + '</div></div>' +
+            '</div>' +
+            [['Telefone',cli.telefone||'--'],['E-mail',cli.email||'--'],['CPF/CNPJ',cli.cpf_cnpj||'--'],['Endereco',cli.endereco||'--']].map(([k,v])=>
+              '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--border)">' +
+                '<span style="font-size:12px;color:var(--muted)">' + k + '</span>' +
+                '<span style="font-size:12px">' + v + '</span>' +
+              '</div>'
+            ).join('')
+          : '<div class="empty">Nenhum cliente vinculado</div>') +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+
+    // ── TAB FINANCEIRO ──
+    (isDono ?
+    '<div id="ev-tab-fin" class="tabcontent">' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">' +
+
+        // Servicos e produtos
+        '<div class="card">' +
+          '<div class="ctitle">Servicos & Produtos' +
+            '<button type="button" class="btn bp bsm" data-evid2="' + id + '" onclick="addSvcEvento(this.dataset.evid2)">+ Adicionar</button>' +
+          '</div>' +
+          '<div id="ev-svc-list-fin">' +
+            ((servicos||[]).length ?
+              (servicos||[]).map(x=>
+                '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:8px;background:var(--cream);margin-bottom:6px">' +
+                  '<div>' +
+                    '<div style="font-size:13px;font-weight:500">' + x.descricao + '</div>' +
+                    '<div style="font-size:11px;color:var(--muted)">' + (x.categoria||'') + (x.obs?' · '+x.obs:'') + '</div>' +
+                  '</div>' +
+                  '<div style="display:flex;align-items:center;gap:8px">' +
+                    '<span style="font-size:13px;font-weight:500;color:var(--success)">' + fmtMoney(x.valor) + '</span>' +
+                    '<button type="button" class="btn bsm" style="background:var(--danger-bg);color:var(--danger);border:none" data-svcid="' + x.id + '" data-evid="' + id + '" onclick="excluirSvc(this.dataset.svcid,this.dataset.evid)">✕</button>' +
+                  '</div>' +
+                '</div>'
+              ).join('')
+            : '<div class="empty">Nenhum item adicionado</div>') +
+          '</div>' +
+          '<div class="divider"></div>' +
+          '<div class="fg" style="margin:0">' +
+            '<label class="fl">Desconto (R$)</label>' +
+            '<input class="fi" type="number" id="ev-desconto" value="' + (ev.desconto||0) + '" placeholder="0" oninput="calcFinEvento(' + totalSvc + ')" style="width:140px">' +
+          '</div>' +
+          '<div class="fg" style="margin-top:8px;margin-bottom:0">' +
+            '<label class="fl">Adicional / Taxa (R$)</label>' +
+            '<input class="fi" type="number" id="ev-adicional" value="' + (ev.adicional||0) + '" placeholder="0" oninput="calcFinEvento(' + totalSvc + ')" style="width:140px">' +
+          '</div>' +
+          '<div class="divider"></div>' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">' +
+            '<span style="font-size:12px;color:var(--muted)">Subtotal servicos</span>' +
+            '<span style="font-size:13px">' + fmtMoney(totalSvc) + '</span>' +
+          '</div>' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">' +
+            '<span style="font-size:12px;color:var(--muted)">Desconto</span>' +
+            '<span style="font-size:13px;color:var(--danger)" id="ev-desc-label">- ' + fmtMoney(desconto) + '</span>' +
+          '</div>' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">' +
+            '<span style="font-size:12px;color:var(--muted)">Adicional</span>' +
+            '<span style="font-size:13px;color:var(--info)" id="ev-adic-label">+ ' + fmtMoney(adicional) + '</span>' +
+          '</div>' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--rose-l);border-radius:9px;margin-bottom:12px">' +
+            '<span style="font-size:13px;font-weight:500;color:var(--rose-d)">Valor total do contrato</span>' +
+            '<span style="font-size:18px;font-weight:500;font-family:serif;color:var(--rose-d)" id="ev-total-label">' + fmtMoney(valorTotal) + '</span>' +
+          '</div>' +
+          '<button type="button" class="btn bsec bsm" data-evid2="' + id + '" onclick="salvarDescontoAdicional(this.dataset.evid2)">Salvar desconto/adicional</button>' +
+        '</div>' +
+
+        // Pagamentos
+        '<div class="card">' +
+          '<div class="ctitle">Pagamentos' +
+            '<button type="button" class="btn bp bsm" data-evid2="' + id + '" onclick="abrirLancEvento(this.dataset.evid2)">+ Registrar</button>' +
+          '</div>' +
+          ((pags||[]).length ?
+            (pags||[]).map(p=>
+              '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-radius:8px;background:' + (p.status==='pago'?'var(--success-bg)':'var(--warn-bg)') + ';margin-bottom:6px">' +
+                '<div>' +
+                  '<div style="font-size:13px;font-weight:500">' + p.descricao + '</div>' +
+                  '<div style="font-size:11px;color:var(--muted)">' + fmtDate(p.data) + ' · ' + (p.forma_pagamento||'') + '</div>' +
+                '</div>' +
+                '<div style="text-align:right">' +
+                  '<div style="font-size:13px;font-weight:500;color:' + (p.status==='pago'?'var(--success)':'var(--warn)') + '">' + fmtMoney(p.valor) + '</div>' +
+                  '<div style="font-size:11px;color:var(--muted)">' + (p.status==='pago'?'Pago':'Pendente') + '</div>' +
+                '</div>' +
+              '</div>'
+            ).join('')
+          : '<div class="empty">Nenhum pagamento registrado</div>') +
+          '<div class="divider"></div>' +
+          '<div style="display:flex;justify-content:space-between;margin-bottom:6px">' +
+            '<span style="font-size:12px;color:var(--muted)">Total recebido</span>' +
+            '<span style="font-size:13px;font-weight:500;color:var(--success)">' + fmtMoney(totalPago) + '</span>' +
+          '</div>' +
+          '<div style="display:flex;justify-content:space-between;padding:8px 12px;border-radius:8px;background:' + (saldoAberto>0?'var(--warn-bg)':'var(--success-bg)') + '">' +
+            '<span style="font-size:13px;font-weight:500;color:' + (saldoAberto>0?'var(--warn)':'var(--success)') + '">Saldo em aberto</span>' +
+            '<span style="font-size:15px;font-weight:500;font-family:serif;color:' + (saldoAberto>0?'var(--warn)':'var(--success)') + '">' + fmtMoney(saldoAberto) + '</span>' +
+          '</div>' +
+          '<div class="divider"></div>' +
+          '<button type="button" class="btn bsec" style="width:100%;justify-content:center" data-evid2="' + id + '" onclick="resumoFinanceiro(this.dataset.evid2)">📄 Resumo financeiro do contrato</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>'
+    : '') +
+
+    // ── TAB DOCS ──
+    '<div id="ev-tab-docs" class="tabcontent">' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
+        '<div class="card">' +
+          '<div class="ctitle">Documentos' +
+            '<button type="button" class="btn bp bsm" data-evid2="' + id + '" onclick="simUpload(this.dataset.evid2)">+ Upload</button>' +
+          '</div>' +
+          '<div style="margin-bottom:12px">' +
+            '<div style="font-size:11px;font-weight:500;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Modelos</div>' +
+            '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' +
+              listrarModelosBtns(id) +
+              '<button type="button" class="btn bp bsm" onclick="novoModelo()">+ Novo modelo</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="divider"></div>' +
+          ((docs||[]).map(d=>
+            '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:9px;background:var(--cream);border:.5px solid var(--border);margin-bottom:8px">' +
+              '<div style="width:30px;height:30px;border-radius:7px;background:var(--info-bg);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">📄</div>' +
+              '<div style="flex:1"><div style="font-size:13px;font-weight:500">' + d.nome + '</div>' +
+              '<div style="font-size:11px;color:var(--muted)">' + fmtDate((d.created_at||'').split('T')[0]) + '</div></div>' +
+              (d.assinado ?
+                '<div style="display:flex;align-items:center;gap:6px">' +
+                  '<span class="badge bs">✓ Assinado</span>' +
+                  (d.zapsign_url ? '<a href="' + d.zapsign_url + '" target="_blank" class="btn bsec bsm" style="font-size:10px">📥 PDF</a>' : '') +
+                '</div>'
+              :
+                '<div style="display:flex;align-items:center;gap:6px">' +
+                  '<span class="badge bw">Pendente</span>' +
+                  (d.zapsign_token ?
+                    '<span style="font-size:10px;color:var(--muted)">Aguardando assinatura</span>'
+                  :
+                    '<button type="button" class="btn bsm" style="background:var(--info-bg);color:var(--info);border:none;font-size:10px" data-docid="' + d.id + '" data-evid2="' + id + '" onclick="enviarZapSign(this.dataset.docid,this.dataset.evid2)">✍ Enviar para assinatura</button>'
+                  ) +
+                '</div>'
+              ) +
+            '</div>'
+          ).join('') || '<div class="empty" style="margin-top:8px">Nenhum documento enviado</div>') +
+          '<div class="uparea" data-evid2="' + id + '" onclick="simUpload(this.dataset.evid2)" style="margin-top:10px;padding:14px">' +
+            '<div style="font-size:12px;color:var(--muted)">Arraste ou clique para enviar</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="card">' +
+          '<div class="ctitle">Assinatura digital</div>' +
+          ((docs||[]).filter(d=>d.assinado).map(d=>
+            '<div style="padding:10px 14px;border-radius:8px;background:var(--success-bg);color:var(--success);font-size:12px;margin-bottom:8px">' +
+              '<strong>' + d.nome + '</strong> — Assinado via ZapSign' +
+              (d.assinado_em ? '<br><span style="font-size:11px;opacity:.8">' + new Date(d.assinado_em).toLocaleString('pt-BR') + '</span>' : '') +
+              (d.zapsign_url ? '<br><a href="' + d.zapsign_url + '" target="_blank" style="font-size:11px">Baixar PDF assinado</a>' : '') +
+            '</div>'
+          ).join('')) +
+          ((docs||[]).filter(d=>!d.assinado&&d.zapsign_token).map(d=>
+            '<div style="padding:10px 14px;border-radius:8px;background:var(--info-bg);color:var(--info);font-size:12px;margin-bottom:8px">' +
+              '<strong>' + d.nome + '</strong> — Aguardando assinatura<br>' +
+              '<button type="button" style="font-size:11px;background:none;border:none;color:var(--info);cursor:pointer;text-decoration:underline;padding:2px 0" ' +
+                'data-docid="' + d.id + '" data-evid2="' + id + '" onclick="verificarZapSign(this.dataset.docid,this.dataset.evid2)">Verificar status</button>' +
+            '</div>'
+          ).join('')) +
+          ((docs||[]).filter(d=>!d.assinado&&!d.zapsign_token).length===0&&(docs||[]).length>0 ? '' :
+            (docs||[]).filter(d=>!d.assinado&&!d.zapsign_token).length>0 ?
+              '<div style="font-size:12px;color:var(--muted);padding:8px 0">Clique em "Enviar para assinatura" no documento para solicitar via ZapSign.</div>' :
+              (docs||[]).length===0 ? '<div class="empty">Nenhum documento enviado</div>' : '') +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  // Tab behavior
+  document.querySelectorAll('#ev-dtabs .tab').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('#ev-dtabs .tab').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('[id^="ev-tab-"]').forEach(t=>t.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('ev-tab-'+btn.dataset.evTab).classList.add('active');
+    });
+  });
+}
+async function simUpload(evId) {
+  const nome = prompt('Nome do documento:','Contrato de prestação de serviços.pdf');
+  if(!nome) return;
+  await sb.from('evento_documentos').insert({evento_id:evId,nome,tamanho:'--',assinado:false});
+  verEvento(evId);
+}
+
+async function simAssinar(evId) {
+  const { data: docs } = await sb.from('evento_documentos').select('*').eq('evento_id',evId).eq('assinado',false).limit(1);
+  if(!docs?.length) return;
+  const ip = `187.${Math.floor(Math.random()*200)}.${Math.floor(Math.random()*200)}.${Math.floor(Math.random()*200)}`;
+  await sb.from('evento_documentos').update({assinado:true,assinado_ip:ip,assinado_em:new Date().toISOString()}).eq('id',docs[0].id);
+  verEvento(evId);
+}
+
+async function addSvcModal(evId) {
+  const desc = prompt('Descrição do serviço/produto:');
+  if(!desc) return;
+  const val = parseFloat(prompt('Valor (R$):')||0);
+  await sb.from('evento_servicos').insert({evento_id:evId,descricao:desc,valor:val});
+  verEvento(evId);
+}
+
+// ── SALVAR EVENTO ─────────────────────────────────────────────────
+
+// ── CLIENTE INLINE NO FORM DE EVENTO ─────────────────────────────
+function toggleNovoClienteInline() {
+  const el = document.getElementById('novo-cli-inline');
+  const btn = document.getElementById('btn-novo-cli-inline');
+  const open = el.style.display === 'none';
+  el.style.display = open ? 'block' : 'none';
+  btn.textContent = open ? '✕ Fechar' : '+ Novo cliente';
+  if(open) {
+    document.getElementById('ev-cli-nome').value = '';
+    document.getElementById('ev-cli-tel').value = '';
+    document.getElementById('ev-cli-email').value = '';
+    document.getElementById('ev-cli-doc').value = '';
+    setTimeout(() => document.getElementById('ev-cli-nome').focus(), 50);
+  }
+}
+
+async function salvarClienteInline() {
+  const nome  = document.getElementById('ev-cli-nome').value.trim();
+  const tel   = document.getElementById('ev-cli-tel').value.trim();
+  const email = document.getElementById('ev-cli-email').value.trim();
+  const doc   = document.getElementById('ev-cli-doc').value.trim();
+  if(!nome) { alert('Informe o nome do cliente.'); return; }
+  const obj = { nome };
+  if(tel)   obj.telefone  = tel;
+  if(email) obj.email     = email;
+  if(doc)   obj.cpf_cnpj = doc;
+  const { data, error } = await sb.from('clientes').insert(obj).select();
+  if(error) { alert('Erro ao salvar cliente: ' + error.message + ' (codigo: ' + error.code + ')'); return; }
+  if(!data || !data.length) { alert('Erro: cliente nao foi retornado pelo banco.'); return; }
+  await loadAll();
+  loadClientesSelect();
+  document.getElementById('ev-cliente').value = data[0].id;
+  toggleNovoClienteInline();
+}
+
+async function salvarEvento() {
+  const nome      = document.getElementById('ev-nome').value.trim();
+  const data      = document.getElementById('ev-data').value;
+  const horaRaw   = document.getElementById('ev-hora').value || '';
+  const tipo      = document.getElementById('ev-tipo').value;
+  const local     = document.getElementById('ev-local').value.trim() || null;
+  const convidados= Number(document.getElementById('ev-conv').value) || 0;
+  const valor     = parseFloat(document.getElementById('ev-valor').value) || 0;
+  const obs       = document.getElementById('ev-obs').value.trim() || null;
+  const clienteId = document.getElementById('ev-cliente').value || null;
+  if(!nome || !data) { alert('Preencha o nome e a data do evento.'); return; }
+  const horario = horaRaw ? (horaRaw.length === 5 ? horaRaw + ':00' : horaRaw) : null;
+  const obj = { nome, tipo, data, horario, local, convidados, valor, obs, status: 'confirmado', cliente_id: clienteId };
+  const { error } = await sb.from('eventos').insert(obj);
+  if(error) { alert('Erro ao salvar evento: ' + error.message + ' (codigo: ' + error.code + ')'); return; }
+  closeModal('novoEvento');
+  await loadAll();
+  if(gcalConnected) addEventoToGcal({ nome, data, horario: horaRaw, local: local || '', tipo, convidados });
+  renderEventos();
+  renderDashboard();
+  renderCalendar();
+  updateFuBadge();
+}
+
+// ── CLIENTES ──────────────────────────────────────────────────────
+function renderClientes() {
+  document.getElementById('cli-tbody').innerHTML = CACHE.clientes.map(c=>`<tr>
+    <td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="background:var(--rose-l);color:var(--rose-d)">${ini(c.nome)}</div><span style="font-weight:500">${c.nome}</span></div></td>
+    <td><div style="font-size:12px">${c.telefone||'--'}</div><div style="font-size:11px;color:var(--muted)">${c.email||'--'}</div></td>
+    <td>${CACHE.eventos.filter(e=>e.cliente_id===c.id).length}</td>
+    ${isDono?`<td>${fmtMoney(CACHE.lancamentos.filter(l=>l.cliente_id===c.id&&l.tipo==='receita').reduce((a,l)=>a+Number(l.valor),0))}</td>`:''}
+    <td>${fmtDate(CACHE.eventos.filter(e=>e.cliente_id===c.id).sort((a,b)=>b.data.localeCompare(a.data))[0]?.data)||'--'}</td>
+    <td><button class="btn bsec bsm">Ver</button></td>
+  </tr>`).join('')||`<tr><td colspan="6" class="empty">Nenhum cliente cadastrado</td></tr>`;
+}
+
+async function salvarCliente() {
+  const nome = document.getElementById('cli-nome').value.trim();
+  if(!nome) { alert('Informe o nome do cliente.'); return; }
+  const obj = { nome };
+  const tel   = document.getElementById('cli-tel').value.trim();
+  const email = document.getElementById('cli-email').value.trim();
+  const doc   = document.getElementById('cli-doc').value.trim();
+  const end   = document.getElementById('cli-end').value.trim();
+  const obs   = document.getElementById('cli-obs').value.trim();
+  if(tel)   obj.telefone  = tel;
+  if(email) obj.email     = email;
+  if(doc)   obj.cpf_cnpj = doc;
+  if(end)   obj.endereco  = end;
+  if(obs)   obj.obs       = obs;
+  const { data, error } = await sb.from('clientes').insert(obj).select();
+  if(error) {
+    alert('Erro ao salvar cliente: ' + error.message + ' (codigo: ' + error.code + ')');
+    return;
+  }
+  closeModal('novoCliente');
+  ['cli-nome','cli-tel','cli-email','cli-doc','cli-end','cli-obs'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value = '';
+  });
+  await loadAll();
+  renderClientes();
+  loadClientesSelect();
+}
+
+function loadClientesSelect() {
+  const sel=document.getElementById('ev-cliente');
+  sel.innerHTML='<option value="">Selecione o cliente...</option>'+CACHE.clientes.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+}
+
+// ── ORÇAMENTOS ────────────────────────────────────────────────────
+function renderOrcamentos() {
+  const semResposta = CACHE.orcamentos.filter(o=>o.etapa!=='fechado'&&diffDays(o.ultimo_contato)>=3);
+  const alertEl=document.getElementById('orc-alerta');
+  if(semResposta.length) { alertEl.classList.remove('hidden'); alertEl.textContent=`⚠ ${semResposta.length} orçamento(s) sem resposta há mais de 3 dias.`; }
+  else alertEl.classList.add('hidden');
+  renderFunil(); renderFollowups(); renderHistorico(); renderOrcLista();
+}
+
+function renderFunil() {
+  const etapas=['lead','proposta','negociacao','fechado'];
+  const labels={lead:'Lead',proposta:'Proposta',negociacao:'Negociação',fechado:'Fechado ✓'};
+  document.getElementById('funil-board').innerHTML=etapas.map(et=>`
+    <div class="fcol">
+      <div class="fcolhead"><span>${labels[et]}</span><span style="background:var(--white);border-radius:20px;padding:1px 7px;font-size:10px">${CACHE.orcamentos.filter(o=>o.etapa===et).length}</span></div>
+      ${CACHE.orcamentos.filter(o=>o.etapa===et).map(o=>{
+        const dias=diffDays(o.ultimo_contato);
+        const sem=dias>=3&&et!=='fechado';
+        const fuHoje=CACHE.followups.some(f=>f.orcamento_id===o.id&&!f.feito&&f.data===today());
+        return `<div class="fcard ${sem?'alerta':fuHoje?'alerta-w':''}" onclick="">
+          <div style="font-size:12px;font-weight:500">${o.cliente}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">${o.tipo}${o.convidados?' · '+o.convidados+' conv.':''}</div>
+          ${isDono&&o.valor?`<div style="font-size:12px;font-weight:500;color:var(--success);margin-top:2px">${fmtMoney(o.valor)}</div>`:''}
+          ${sem?`<div style="font-size:10px;color:var(--danger);margin-top:3px;font-weight:500">⚠ ${dias}d sem contato</div>`:''}
+          <div style="display:flex;gap:4px;margin-top:7px">
+            ${et!=='fechado'?`<button class="btn bwa bsm" style="flex:1;justify-content:center" onclick="event.stopPropagation();window.open('https://wa.me/55${(o.telefone||'').replace(/\D/,'')}','_blank')">💬 WA</button><button class="btn bsec bsm" onclick="event.stopPropagation();avancarOrc('${o.id}')">→</button>`:''}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+async function avancarOrc(id) {
+  const o=CACHE.orcamentos.find(x=>x.id===id); if(!o) return;
+  const prox={lead:'proposta',proposta:'negociacao',negociacao:'fechado'};
+  if(!prox[o.etapa]) return;
+  await sb.from('orcamentos').update({etapa:prox[o.etapa]}).eq('id',id);
+  await loadAll(); renderOrcamentos();
+}
+
+function renderFollowups() {
+  const pend=CACHE.followups.filter(f=>!f.feito&&f.data<=today());
+  const prox=CACHE.followups.filter(f=>!f.feito&&f.data>today());
+  const renderFu=(f,tipo)=>{
+    const o=CACHE.orcamentos.find(x=>x.id===f.orcamento_id)||{cliente:'--',telefone:''};
+    const atras=f.data<today(),hoje=f.data===today();
+    const bg=atras?'var(--danger-bg)':hoje?'var(--warn-bg)':'var(--white)';
+    const bc=atras?'var(--danger)':hoje?'var(--warn)':'var(--border)';
+    return `<div style="padding:12px 14px;border-radius:10px;border:.5px solid ${bc};background:${bg};margin-bottom:8px">
+      <div style="font-size:13px;font-weight:500">${o.cliente}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">${CANAL_ICON[f.tipo]||'💬'} ${fmtDate(f.data)}${f.hora?' às '+f.hora:''}</div>
+      <div style="font-size:12px;margin-top:4px">${f.pauta||''}</div>
+      <div style="display:flex;gap:5px;margin-top:8px">
+        <button class="btn bwa bsm" onclick="window.open('https://wa.me/55${(o.telefone||'').replace(/\D/g,'')}?text=${encodeURIComponent(f.mensagem||'')}','_blank')">💬 WhatsApp</button>
+        <button class="btn bsec bsm" onclick="marcarFeito('${f.id}')">✓ Feito</button>
+        <button class="btn bsec bsm" onclick="openModal('novoContato')">+ Registrar</button>
+      </div>
+    </div>`;
+  };
+  document.getElementById('fu-pendentes').innerHTML=pend.map(f=>renderFu(f,'pend')).join('')||'<div class="empty">Nenhum follow-up pendente ✓</div>';
+  document.getElementById('fu-proximos').innerHTML=prox.map(f=>renderFu(f,'prox')).join('')||'<div class="empty">Nenhum agendado</div>';
+}
+
+async function marcarFeito(id) {
+  await sb.from('followups').update({feito:true}).eq('id',id);
+  await loadAll(); renderOrcamentos(); updateFuBadge();
+}
+
+function renderHistorico() {
+  document.getElementById('hist-list').innerHTML=[...CACHE.historico].slice(0,20).map(h=>{
+    const o=CACHE.orcamentos.find(x=>x.id===h.orcamento_id)||{cliente:'--'};
+    const r=RESULT_MAP[h.resultado]||{l:h.resultado,c:'bn'};
+    return `<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:9px;background:var(--cream);border:.5px solid var(--border);margin-bottom:7px">
+      <div style="width:28px;height:28px;border-radius:7px;background:var(--info-bg);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">${CANAL_ICON[h.canal]||'💬'}</div>
+      <div style="flex:1"><div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><span style="font-size:13px;font-weight:500">${o.cliente}</span><span class="badge ${r.c}" style="font-size:10px">${r.l}</span><span style="font-size:11px;color:var(--muted);margin-left:auto">${fmtDate(h.data)}</span></div><div style="font-size:12px;color:var(--muted)">${h.obs||''}</div></div>
+    </div>`;
+  }).join('')||'<div class="empty">Nenhum contato registrado</div>';
+}
+
+function renderOrcLista() {
+  document.getElementById('orc-tbody').innerHTML=CACHE.orcamentos.map(o=>{
+    const e=ETAPA_MAP[o.etapa]||{l:o.etapa,c:'bn'};
+    const dias=diffDays(o.ultimo_contato);
+    return `<tr>
+      <td style="font-weight:500">${o.cliente}</td>
+      <td>${o.tipo}</td><td>${fmtDate(o.data_evento)}</td>
+      ${isDono?`<td>${fmtMoney(o.valor)}</td>`:''}
+      <td><span class="badge ${e.c}">${e.l}</span></td>
+      <td><span class="badge ${dias>=3&&o.etapa!=='fechado'?'bd':dias===0?'bs':'bn'}">${dias===0?'Hoje':dias+'d'}</span></td>
+      <td><div style="display:flex;gap:4px">
+        ${o.etapa!=='fechado'?`<button class="btn bwa bsm" onclick="window.open('https://wa.me/55${(o.telefone||'').replace(/\D/g,'')}','_blank')">💬</button>`:''}
+        ${o.etapa!=='fechado'?`<button class="btn bp bsm" onclick="converterEvento('${o.id}')">✓ Vender</button>`:''}
+      </div></td>
+    </tr>`;
+  }).join('')||`<tr><td colspan="7" class="empty">Nenhuma proposta</td></tr>`;
+}
+
+async function salvarOrc() {
+  const cli=document.getElementById('orc-cli').value.trim(); if(!cli){alert('Informe o nome do cliente.');return;}
+  const diasFu=Number(document.getElementById('orc-fu').value)||3;
+  const {data:orc,error}=await sb.from('orcamentos').insert({cliente:cli,telefone:document.getElementById('orc-tel').value,tipo:document.getElementById('orc-tipo').value,data_evento:document.getElementById('orc-data').value||null,convidados:Number(document.getElementById('orc-conv').value)||0,valor:parseFloat(document.getElementById('orc-val').value)||0,etapa:document.getElementById('orc-etapa').value,obs:document.getElementById('orc-obs').value,ultimo_contato:today()}).select().single();
+  if(error){alert('Erro: '+error.message);return;}
+  await sb.from('followups').insert({orcamento_id:orc.id,data:daysFrom(diasFu),hora:'10:00',tipo:'whatsapp',pauta:'1º follow-up - verificar interesse',mensagem:`Olá ${cli.split(' ')[0]}! Tudo bem? Passando para ver se você teve a oportunidade de analisar nossa proposta. 😊`,feito:false});
+  closeModal('novoOrc');
+  await loadAll(); renderOrcamentos(); updateFuBadge();
+}
+
+async function salvarFollowup() {
+  const orcId=document.getElementById('fu-orc').value;
+  const data=document.getElementById('fu-data').value; if(!data){alert('Informe a data.');return;}
+  await sb.from('followups').insert({orcamento_id:orcId,data,hora:document.getElementById('fu-hora').value,tipo:document.getElementById('fu-tipo').value,pauta:document.getElementById('fu-pauta').value,mensagem:document.getElementById('fu-msg').value,feito:false});
+  closeModal('novoFollowup');
+  await loadAll(); renderOrcamentos(); updateFuBadge();
+}
+
+async function salvarContato() {
+  const orcId=document.getElementById('cont-orc').value;
+  const data=document.getElementById('cont-data').value; if(!data){alert('Informe a data.');return;}
+  await sb.from('contatos_historico').insert({orcamento_id:orcId,canal:document.getElementById('cont-canal').value,data,resultado:document.getElementById('cont-result').value,obs:document.getElementById('cont-obs').value});
+  await sb.from('orcamentos').update({ultimo_contato:data}).eq('id',orcId);
+  const prox=Number(document.getElementById('cont-prox').value);
+  if(prox>0) await sb.from('followups').insert({orcamento_id:orcId,data:daysFrom(prox),hora:'10:00',tipo:'whatsapp',pauta:'Follow-up pós contato',mensagem:'',feito:false});
+  closeModal('novoContato');
+  await loadAll(); renderOrcamentos(); updateFuBadge();
+}
+
+async function converterEvento(id) {
+  const o=CACHE.orcamentos.find(x=>x.id===id); if(!o) return;
+  await sb.from('orcamentos').update({etapa:'fechado'}).eq('id',id);
+  alert(`✓ "${o.cliente}" convertido!\nAbra Eventos → Novo Evento para finalizar o cadastro.`);
+  await loadAll(); renderOrcamentos();
+}
+
+function updateFuBadge() {
+  const n=CACHE.followups.filter(f=>!f.feito&&f.data<=today()).length;
+  const b=document.getElementById('badge-fu');
+  b.textContent=n; b.classList.toggle('hidden',n===0);
+}
+
+// ── SERVIÇOS ──────────────────────────────────────────────────────
+function renderServicos() {
+  const total=CACHE.produtos.length;
+  const custoMed=total>0?CACHE.produtos.reduce((a,p)=>a+Number(p.custo),0)/total:0;
+  const precoMed=total>0?CACHE.produtos.reduce((a,p)=>a+Number(p.preco),0)/total:0;
+  const margem=precoMed>0?Math.round(((precoMed-custoMed)/precoMed)*100):0;
+  document.getElementById('svc-stats').innerHTML=`
+    <div class="sc"><div class="slabel">Itens cadastrados</div><div class="sval">${total}</div></div>
+    <div class="sc"><div class="slabel">Custo médio/pessoa</div><div class="sval">${fmtMoney(custoMed)}</div></div>
+    <div class="sc"><div class="slabel">Margem média</div><div class="sval" style="color:${margem>=40?'var(--success)':margem>=20?'var(--warn)':'var(--danger)'}">${margem}%</div></div>`;
+  document.getElementById('svc-tbody').innerHTML=CACHE.produtos.map(p=>{
+    const m=p.preco>0?Math.round(((p.preco-p.custo)/p.preco)*100):0;
+    return `<tr>
+      <td><div style="font-weight:500">${p.nome}</div><div style="font-size:11px;color:var(--muted)">${p.descricao||''}</div></td>
+      <td><span class="badge bn">${CAT_ICONS[p.categoria]||'📦'} ${p.categoria}</span></td>
+      <td>${fmtMoney(p.custo)}</td>
+      <td style="color:var(--success);font-weight:500">${fmtMoney(p.preco)}</td>
+      <td><span class="badge ${m>=40?'bs':m>=20?'bw':'bd'}">${m}%</span></td>
+      <td><button class="btn bsec bsm">Ver ficha</button></td>
+    </tr>`;
+  }).join('')||`<tr><td colspan="6" class="empty">Nenhum item cadastrado</td></tr>`;
+}
+
+function calcProdMargem() {
+  const c=parseFloat(document.getElementById('prod-custo').value)||0;
+  const p=parseFloat(document.getElementById('prod-preco').value)||0;
+  const m=p>0?Math.round(((p-c)/p)*100):0;
+  const el=document.getElementById('prod-margem-prev');
+  el.textContent=p?m+'%':'--';
+  el.style.color=m>=40?'var(--success)':m>=20?'var(--warn)':'var(--danger)';
+}
+
+function renderAlergChecks() {
+  document.getElementById('alerg-checks').innerHTML=ALERG_LIST.map(a=>`<label style="display:flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;border:.5px solid var(--border);background:var(--cream);cursor:pointer;font-size:12px"><input type="checkbox" value="${a}" style="accent-color:var(--rose-d)"> ${a}</label>`).join('');
+}
+
+async function salvarProduto() {
+  const nome=document.getElementById('prod-nome').value.trim(); if(!nome){alert('Informe o nome.');return;}
+  const alerg=[...document.querySelectorAll('#alerg-checks input:checked')].map(i=>i.value);
+  const obj={nome,categoria:document.getElementById('prod-cat').value,custo:parseFloat(document.getElementById('prod-custo').value)||0,preco:parseFloat(document.getElementById('prod-preco').value)||0,rendimento:parseFloat(document.getElementById('prod-rend').value)||1,descricao:document.getElementById('prod-desc').value,ingredientes:document.getElementById('prod-ingr').value,preparo:document.getElementById('prod-preparo').value,tempo_preparo:document.getElementById('prod-tempo').value,temperatura:document.getElementById('prod-temp').value,alergenos:alerg,obs:document.getElementById('prod-obs').value};
+  const {error}=await sb.from('produtos').insert(obj);
+  if(error){alert('Erro: '+error.message);return;}
+  closeModal('novoProduto');
+  await loadAll(); renderServicos();
+}
+
+// ── FINANCEIRO ────────────────────────────────────────────────────
+function renderFinanceiro() {
+  const mes=new Date().getMonth(), ano=new Date().getFullYear();
+  const prefix=ano+'-'+(mes+1).toString().padStart(2,'0');
+  const ent=CACHE.lancamentos.filter(l=>l.tipo==='receita'&&l.data?.startsWith(prefix)).reduce((a,l)=>a+Number(l.valor),0);
+  const sai=CACHE.lancamentos.filter(l=>l.tipo==='despesa'&&l.data?.startsWith(prefix)).reduce((a,l)=>a+Number(l.valor),0);
+  const saldo=CACHE.contas.reduce((a,c)=>a+Number(c.saldo_inicial),0);
+  document.getElementById('fin-stats').innerHTML=`
+    <div class="sc"><div class="slabel">Saldo total</div><div class="sval">${fmtMoney(saldo)}</div></div>
+    <div class="sc"><div class="slabel">Entradas (mês)</div><div class="sval" style="color:var(--success)">${fmtMoney(ent)}</div></div>
+    <div class="sc"><div class="slabel">Saídas (mês)</div><div class="sval" style="color:var(--danger)">${fmtMoney(sai)}</div></div>`;
+  document.getElementById('fin-contas').innerHTML=CACHE.contas.map(c=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--cream);border-radius:9px;border:.5px solid var(--border);margin-bottom:8px"><div><div style="font-weight:500;font-size:13px">${c.nome}</div><div style="font-size:11px;color:var(--muted)">${c.banco||''}</div></div><div style="font-size:15px;font-weight:500;font-family:serif;color:var(--success)">${fmtMoney(c.saldo_inicial)}</div></div>`).join('')||'<div class="empty">Nenhuma conta</div>';
+  document.getElementById('fin-lanc-list').innerHTML=CACHE.lancamentos.slice(0,8).map(l=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 11px;border-radius:8px;background:${l.tipo==='receita'?'var(--success-bg)':'var(--danger-bg)'};margin-bottom:6px"><div><div style="font-size:13px;font-weight:500">${l.descricao}</div><div style="font-size:11px;color:var(--muted)">${fmtDate(l.data)}</div></div><div style="font-size:13px;font-weight:500;color:${l.tipo==='receita'?'var(--success)':'var(--danger)'}"> ${l.tipo==='receita'?'+':'−'}${fmtMoney(l.valor)}</div></div>`).join('')||'<div class="empty">Nenhum lançamento</div>';
+}
+
+function loadContasSelect() {
+  const sel=document.getElementById('lanc-conta');
+  sel.innerHTML=CACHE.contas.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+}
+
+async function salvarLanc() {
+  const desc=document.getElementById('lanc-desc').value.trim();
+  const valor=parseFloat(document.getElementById('lanc-valor').value);
+  const data=document.getElementById('lanc-data').value;
+  if(!desc||!valor||!data){alert('Preencha descrição, valor e data.');return;}
+  await sb.from('lancamentos').insert({descricao:desc,tipo:document.getElementById('lanc-tipo').value,valor,data,conta_id:document.getElementById('lanc-conta').value||null,categoria:document.getElementById('lanc-cat').value,forma_pagamento:document.getElementById('lanc-forma').value,obs:document.getElementById('lanc-obs').value,status:'pago'});
+  closeModal('novoLanc');
+  await loadAll(); renderFinanceiro();
+}
+
+// ── OFX ──────────────────────────────────────────────────────────
+function processOFX(input) {
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const text=e.target.result;
+    const txns=[];
+    const matches=[...text.matchAll(/<STMTTRN>([\s\S]*?)<\/STMTTRN>/gi)];
+    matches.forEach(m=>{
+      const get=tag=>{ const r=new RegExp('<'+tag+'>([^<]+)','i'); const x=m[1].match(r); return x?x[1].trim():''; };
+      txns.push({data:get('DTPOSTED').slice(0,8),val:parseFloat(get('TRNAMT')),memo:get('MEMO')||get('NAME')});
+    });
+    document.getElementById('ofx-drop').style.display='none';
+    document.getElementById('ofx-result').style.display='block';
+    document.getElementById('ofx-result').innerHTML=`
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <span class="badge bs">✓ ${txns.length} transações importadas</span>
+        <span style="font-size:12px;color:var(--muted)">${file.name}</span>
+      </div>
+      ${txns.slice(0,20).map(t=>{
+        const d=t.data?t.data.slice(6,8)+'/'+t.data.slice(4,6)+'/'+t.data.slice(0,4):'--';
+        const match=CACHE.lancamentos.find(l=>Math.abs(Number(l.valor)-Math.abs(t.val))<0.01);
+        return `<div style="display:flex;gap:0;border-radius:9px;overflow:hidden;border:.5px solid var(--border);margin-bottom:7px">
+          <div style="flex:1;padding:10px 12px;background:var(--info-bg);font-size:12px"><div style="font-weight:500">${t.memo}</div><div style="color:var(--info);margin-top:2px">${d} · ${t.val>0?'+':''}${fmtMoney(Math.abs(t.val))}</div></div>
+          <div style="width:30px;display:flex;align-items:center;justify-content:center;background:var(--cream);color:var(--muted);font-size:12px">→</div>
+          <div style="flex:1;padding:10px 12px;background:${match?'var(--success-bg)':'var(--danger-bg)'};font-size:12px"><div style="font-weight:500">${match?match.descricao:'Sem correspondência'}</div><div style="color:${match?'var(--success)':'var(--danger)'};font-size:11px;margin-top:2px;font-weight:500">${match?'✓ Conciliado':'⚠ Verificar'}</div></div>
+          ${!match?`<div style="padding:0 8px;display:flex;align-items:center;background:var(--danger-bg)"><button class="btn bsm" style="background:var(--danger);color:white;border:none;white-space:nowrap" onclick="this.closest('.moverlay')||openModal('novoLanc')">Lançar</button></div>`:''}
+        </div>`;
+      }).join('')}
+      <button class="btn bsec bsm" style="margin-top:8px" onclick="document.getElementById('ofx-drop').style.display='block';document.getElementById('ofx-result').style.display='none';document.getElementById('ofx-input').value=''">Importar outro arquivo</button>`;
+  };
+  reader.readAsText(file,'latin1');
+}
+
+// ── RELATÓRIOS ────────────────────────────────────────────────────
+function renderRelatorios() {
+  const ano=new Date().getFullYear();
+  const fat=CACHE.lancamentos.filter(l=>l.tipo==='receita'&&l.data?.startsWith(String(ano))).reduce((a,l)=>a+Number(l.valor),0);
+  const nEv=CACHE.eventos.filter(e=>e.data?.startsWith(String(ano))).length;
+  const ticket=nEv?fat/nEv:0;
+  document.getElementById('rel-stats').innerHTML=`
+    <div class="sc"><div class="slabel">Faturamento ${ano}</div><div class="sval">${fmtMoney(fat)}</div></div>
+    <div class="sc"><div class="slabel">Eventos ${ano}</div><div class="sval">${nEv}</div></div>
+    <div class="sc"><div class="slabel">Ticket médio</div><div class="sval">${fmtMoney(ticket)}</div></div>`;
+  const meses=[0,1,2,3,4,5].map(m=>{
+    const prefix=ano+'-'+(m+1).toString().padStart(2,'0');
+    return CACHE.lancamentos.filter(l=>l.tipo==='receita'&&l.data?.startsWith(prefix)).reduce((a,l)=>a+Number(l.valor),0);
+  });
+  const maxM=Math.max(...meses,1);
+  document.getElementById('rel-chart').innerHTML=meses.map(v=>`<div style="flex:1;background:var(--rose-l);border-radius:4px 4px 0 0;height:${Math.round((v/maxM)*100)}%;transition:background .2s" onmouseover="this.style.background='var(--rose)'" onmouseout="this.style.background='var(--rose-l)'" title="${fmtMoney(v)}"></div>`).join('');
+  document.getElementById('rel-chart-labels').innerHTML=['Jan','Fev','Mar','Abr','Mai','Jun'].map(m=>`<span style="flex:1;font-size:10px;color:var(--muted);text-align:center">${m}</span>`).join('');
+  document.getElementById('rel-tbody').innerHTML=CACHE.eventos.filter(e=>e.data?.startsWith(String(ano))).map(ev=>{
+    const rec=CACHE.lancamentos.filter(l=>l.evento_id===ev.id&&l.tipo==='receita').reduce((a,l)=>a+Number(l.valor),0);
+    const s=STATUS_MAP[ev.status]||{l:ev.status,c:'bn'};
+    return `<tr><td>${ev.nome}</td><td>${fmtDate(ev.data)}</td><td>${ev.convidados||0}</td><td>${fmtMoney(ev.valor)}</td><td>${fmtMoney(rec)}</td><td><span class="badge ${s.c}">${s.l}</span></td></tr>`;
+  }).join('')||`<tr><td colspan="6" class="empty">Nenhum evento</td></tr>`;
+}
+
+// ── IMPORTADOR ────────────────────────────────────────────────────
+function renderImportTypes() {
+  document.getElementById('import-type-sel').innerHTML=[
+    {k:'clientes',i:'◉',l:'Clientes'},{k:'eventos',i:'✦',l:'Eventos'},{k:'financeiro',i:'◈',l:'Financeiro'},{k:'orcamentos',i:'◎',l:'Orçamentos'}
+  ].map(t=>`<div onclick="importType='${t.k}';renderImportTypes()" style="padding:12px;border-radius:10px;border:.5px solid ${importType===t.k?'var(--rose)':'var(--border)'};cursor:pointer;text-align:center;background:${importType===t.k?'var(--rose-l)':'var(--cream)'}"><div style="font-size:18px;margin-bottom:5px">${t.i}</div><div style="font-size:12px;font-weight:500">${t.l}</div></div>`).join('');
+}
+
+function handleImportFile(input) {
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=async e=>{
+    let data=[],headers=[];
+    if(file.name.match(/\.csv$/i)){
+      const lines=e.target.result.split('\n').filter(l=>l.trim());
+      headers=lines[0].split(/[,;]/).map(h=>h.trim().replace(/"/g,''));
+      data=lines.slice(1).map(line=>{const vals=line.split(/[,;]/).map(v=>v.trim().replace(/"/g,''));const row={};headers.forEach((h,i)=>row[h]=vals[i]||'');return row;});
+    } else {
+      const wb=XLSX.read(e.target.result,{type:'binary'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      data=XLSX.utils.sheet_to_json(ws,{defval:''});
+      headers=data.length?Object.keys(data[0]):[];
+    }
+    document.getElementById('import-area').innerHTML=`
+      <div style="background:var(--success-bg);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--success);margin-bottom:12px">✓ Arquivo lido: ${data.length} registros, ${headers.length} colunas</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Colunas detectadas: ${headers.map(h=>`<span style="background:var(--info-bg);color:var(--info);padding:2px 8px;border-radius:4px;margin:2px;display:inline-block;font-size:11px">${h}</span>`).join('')}</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn bp" onclick="executarImport(${JSON.stringify(data).replace(/'/g,"\\'")||'[]'})">Importar ${data.length} registros</button>
+        <button class="btn bsec" onclick="document.getElementById('import-area').innerHTML='';document.getElementById('import-input').value=''">Cancelar</button>
+      </div>`;
+  };
+  file.name.match(/\.csv$/i)?reader.readAsText(file,'UTF-8'):reader.readAsBinaryString(file);
+}
+
+async function executarImport(data) {
+  let ok=0,err=0;
+  for(const row of data) {
+    const vals=Object.values(row);
+    const get=(...keys)=>{ for(const k of keys){ const v=Object.entries(row).find(([h])=>h.toLowerCase().replace(/[^a-z]/g,'').includes(k)); if(v&&v[1]) return String(v[1]).trim(); } return ''; };
+    let obj=null;
+    if(importType==='clientes') obj={nome:get('nome','name','cliente')||'Sem nome',telefone:get('tel','fone','celular','whatsapp'),email:get('email'),cpf_cnpj:get('cpf','cnpj','doc'),endereco:get('ender','rua','logra'),obs:get('obs','nota','anotac')};
+    if(importType==='eventos') { const dt=get('data','date'); obj={nome:get('nome','evento','name')||'Sem nome',tipo:get('tipo','type')||'Casamento',data:dt?dt.split('/').reverse().join('-').replace(/(\d{4})-(\d{1,2})-(\d{1,2})/,(_,a,b,c)=>a+'-'+b.padStart(2,'0')+'-'+c.padStart(2,'0')):'',local:get('local','espaco','salao'),convidados:parseInt(get('conv','pax','pessoa','guest'))||0,valor:parseFloat((get('valor','total','preco')||'0').replace(/[R$. ]/g,'').replace(',','.'))||0,status:'confirmado'}; }
+    if(importType==='financeiro') obj={descricao:get('desc','nome','evento','cliente')||'Importado',tipo:get('tipo','type')||'receita',valor:parseFloat((get('valor','total','preco')||'0').replace(/[R$. ]/g,'').replace(',','.'))||0,data:get('data','date')||today(),status:'pago'};
+    if(importType==='orcamentos') obj={cliente:get('nome','cliente','name')||'Sem nome',telefone:get('tel','fone','whatsapp'),tipo:get('tipo','type')||'Casamento',convidados:parseInt(get('conv','pax','pessoa'))||0,valor:parseFloat((get('valor','preco')||'0').replace(/[R$. ]/g,'').replace(',','.'))||0,etapa:'lead',ultimo_contato:today()};
+    if(obj) { const {error}=await sb.from(importType==='orcamentos'?'orcamentos':importType==='financeiro'?'lancamentos':importType).insert(obj); error?err++:ok++; }
+  }
+  await loadAll();
+  document.getElementById('import-area').innerHTML=`<div style="background:var(--success-bg);border-radius:10px;padding:14px 16px;font-size:13px;color:var(--success)">✓ Importação concluída! ${ok} registros importados${err?`, ${err} com erro`:''}.${err?'<br><span style="font-size:12px;opacity:.8">Revise os itens com erro manualmente.</span>':''}</div>`;
+  renderPage(importType==='financeiro'?'financeiro':importType==='orcamentos'?'orcamentos':importType);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+
+// ── GOOGLE CALENDAR ───────────────────────────────────────────────
+const GCAL_CLIENT_ID = '878329307870-o3naodglalr13tk8ig522ng93f89h946.apps.googleusercontent.com';
+const GCAL_SCOPES = 'https://www.googleapis.com/auth/calendar';
+let gcalToken = null;
+let gcalConnected = false;
+
+function loadGoogleAPI() {
+  if(window.google && window.google.accounts) return;
+  const s = document.createElement('script');
+  s.src = 'https://accounts.google.com/gsi/client';
+  s.async = true; s.defer = true;
+  document.head.appendChild(s);
+}
+
+function connectGoogle() {
+  loadGoogleAPI();
+  setTimeout(function() {
+    if(!window.google || !window.google.accounts) { alert('Aguarde e tente novamente.'); return; }
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: GCAL_CLIENT_ID,
+      scope: GCAL_SCOPES,
+      callback: async function(resp) {
+        if(resp.error) { alert('Erro ao conectar: ' + resp.error); return; }
+        gcalToken = resp.access_token;
+        gcalConnected = true;
+        localStorage.setItem('gcal_token', gcalToken);
+        updateGcalUI(true);
+        await syncEventosToGcal();
+        await loadGcalEvents();
+      },
+    });
+    client.requestAccessToken();
+  }, 1000);
+}
+
+function disconnectGoogle() {
+  gcalToken = null; gcalConnected = false;
+  localStorage.removeItem('gcal_token');
+  localStorage.removeItem('gcal_calendar_id');
+  updateGcalUI(false);
+}
+
+function updateGcalUI(connected) {
+  const btnC  = document.getElementById('btn-gcal-connect');
+  const btnD  = document.getElementById('btn-gcal-disconnect');
+  const bar   = document.getElementById('gcal-status-bar');
+  const badge = document.getElementById('gcal-sync-badge');
+  if(!btnC) return;
+  if(connected) {
+    btnC.style.display = 'none'; btnD.style.display = '';
+    bar.style.display = 'flex';
+    bar.textContent = 'Google Agenda conectado -- eventos sincronizados automaticamente';
+    if(badge) { badge.textContent = 'Sincronizado'; badge.className = 'badge bs'; }
+  } else {
+    btnC.style.display = ''; btnD.style.display = 'none';
+    bar.style.display = 'none';
+    if(badge) { badge.textContent = 'Nao conectado'; badge.className = 'badge bn'; }
+  }
+}
+
+async function gcalFetch(url, options) {
+  if(!gcalToken) return null;
+  options = options || {};
+  const res = await fetch(url, Object.assign({}, options, {
+    headers: Object.assign({ 'Authorization': 'Bearer ' + gcalToken, 'Content-Type': 'application/json' }, options.headers || {})
+  }));
+  if(res.status === 401) { disconnectGoogle(); return null; }
+  if(!res.ok) return null;
+  return res.json();
+}
+
+async function findCalendarId(name) {
+  const data = await gcalFetch('https://www.googleapis.com/calendar/v3/users/me/calendarList');
+  if(!data || !data.items) return 'primary';
+  const found = data.items.find(function(c) { return c.summary === name; });
+  if(found) {
+    localStorage.setItem('gcal_calendar_id', found.id);
+    return found.id;
+  }
+  return 'primary';
+}
+
+async function loadGcalEvents() {
+  const now    = new Date();
+  const start  = new Date(now.getFullYear() - 1, 0, 1).toISOString();
+  const end    = new Date(now.getFullYear() + 2, 11, 31).toISOString();
+  const saved  = localStorage.getItem('gcal_calendar_id');
+  const calId  = localStorage.getItem('gcal_calendar_id') || GCAL_DEFAULT_ID;
+  const encId  = encodeURIComponent(calId);
+  let allEvents = [];
+  let pageToken = '';
+  do {
+    const url = 'https://www.googleapis.com/calendar/v3/calendars/' + encId + '/events?timeMin=' + encodeURIComponent(start) + '&timeMax=' + encodeURIComponent(end) + '&singleEvents=true&orderBy=startTime&maxResults=250' + (pageToken ? '&pageToken=' + pageToken : '');
+    const page = await gcalFetch(url);
+    if(!page || !page.items) break;
+    allEvents = allEvents.concat(page.items);
+    pageToken = page.nextPageToken || '';
+  } while(pageToken);
+  const data = { items: allEvents };
+  if(!data || !data.items) return;
+  const el = document.getElementById('gcal-events-list');
+  if(!el) return;
+  const events = data.items.filter(function(e) { return e.status !== 'cancelled'; });
+  const badge  = document.getElementById('gcal-sync-badge');
+  if(badge) { badge.textContent = 'Agenda principal (' + events.length + ' eventos)'; badge.className = 'badge bs'; }
+  if(!events.length) { el.innerHTML = '<div class="empty">Nenhum evento na agenda principal neste periodo.</div>'; return; }
+  el.innerHTML = events.map(function(e) {
+    const st = (e.start && (e.start.dateTime || e.start.date)) || '';
+    const d  = st ? new Date(st).toLocaleDateString('pt-BR', {day:'2-digit',month:'short',year:'numeric'}) : '---';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:9px;background:var(--cream);border:.5px solid var(--border);margin-bottom:7px"><div><div style="font-size:13px;font-weight:500">' + (e.summary||'Sem titulo') + '</div><div style="font-size:11px;color:var(--muted)">' + d + (e.location ? ' - ' + e.location : '') + '</div></div><span class="badge bi" style="font-size:10px">Buffet Santa Maria</span></div>';
+  }).join('');
+  mergeGcalIntoCalendar(events);
+}
+
+function mergeGcalIntoCalendar(gcalEvents) {
+  gcalEvents.forEach(function(e) {
+    const dateStr = ((e.start && (e.start.dateTime || e.start.date)) || '').slice(0,10);
+    if(!dateStr) return;
+    const exists = CACHE.eventos.some(function(ev) { return ev.nome === e.summary && ev.data === dateStr; });
+    if(!exists) CACHE.eventos.push({ id: 'gcal_' + e.id, nome: e.summary || 'Evento Google', data: dateStr, tipo: 'Google Agenda', status: 'confirmado', local: e.location || '', convidados: 0, valor: 0, _gcal: true });
+  });
+  renderCalendar();
+}
+
+async function gcalCalendarId() {
+  return localStorage.getItem('gcal_calendar_id') || GCAL_DEFAULT_ID;
+}
+
+async function syncEventosToGcal() {
+  if(!gcalToken) return;
+  const calId   = await gcalCalendarId();
+  const encId   = encodeURIComponent(calId);
+  const futuros = CACHE.eventos.filter(function(e) { return e.data >= today() && !e._gcal; });
+  for(let i = 0; i < Math.min(futuros.length, 10); i++) {
+    const ev = futuros[i];
+    await gcalFetch('https://www.googleapis.com/calendar/v3/calendars/' + encId + '/events', { method: 'POST', body: JSON.stringify({ summary: ev.nome, location: ev.local || '', start: { date: ev.data }, end: { date: ev.data } }) });
+  }
+}
+
+async function addEventoToGcal(ev) {
+  if(!gcalConnected || !gcalToken) return;
+  const calId   = await gcalCalendarId();
+  const encId   = encodeURIComponent(calId);
+  const hasTime = ev.horario && ev.horario.length > 0;
+  await gcalFetch('https://www.googleapis.com/calendar/v3/calendars/' + encId + '/events', { method: 'POST', body: JSON.stringify({ summary: ev.nome, location: ev.local || '', start: hasTime ? { dateTime: ev.data + 'T' + ev.horario + ':00', timeZone: 'America/Sao_Paulo' } : { date: ev.data }, end: hasTime ? { dateTime: ev.data + 'T' + ev.horario + ':00', timeZone: 'America/Sao_Paulo' } : { date: ev.data } }) });
+}
+
+
+// ── GOOGLE AGENDA EMBED ───────────────────────────────────────────
+function salvarEmbedUrl() {
+  const raw = document.getElementById('gcal-embed-url').value.trim();
+  if(!raw) { alert('Cole a URL da agenda antes de salvar.'); return; }
+  // Accepts both ical URL and HTML embed src — extract calendar ID
+  let calId = '';
+  const icalMatch = raw.match(/calendar\/ical\/([^\/]+)\//);
+  const embedMatch = raw.match(/calendar\/embed\?src=([^&]+)/);
+  const basicMatch = raw.match(/src=([^&"]+)/);
+  if(icalMatch) calId = decodeURIComponent(icalMatch[1]);
+  else if(embedMatch) calId = decodeURIComponent(embedMatch[1]);
+  else if(basicMatch) calId = decodeURIComponent(basicMatch[1]);
+  else calId = raw;
+  localStorage.setItem('gcal_embed_id', calId);
+  renderIframe(calId);
+}
+
+const GCAL_DEFAULT_ID = '7hlsm570cev3laekctm1r37kms@group.calendar.google.com';
+const GCAL_DEFAULT_ENC = '7hlsm570cev3laekctm1r37kms%40group.calendar.google.com';
+
+function renderIframe(calId) {
+  calId = calId || GCAL_DEFAULT_ID;
+  const view = (document.getElementById('gcal-view-sel') || {value:'MONTH'}).value || 'MONTH';
+  const enc  = encodeURIComponent(calId);
+  const src  = 'https://calendar.google.com/calendar/embed?src=' + enc + '&ctz=America%2FSao_Paulo&mode=' + view + '&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=0&hl=pt-BR&bgcolor=%23ffffff';
+  document.getElementById('gcal-iframe').src = src;
+  document.getElementById('gcal-open-link').href = 'https://calendar.google.com/calendar/r?cid=' + enc;
+  document.getElementById('gcal-setup-card').style.display = 'none';
+  document.getElementById('gcal-iframe-wrap').style.display = 'block';
+}
+
+function updateIframe() {
+  const calId = localStorage.getItem('gcal_embed_id');
+  if(calId) renderIframe(calId);
+}
+
+// Auto-load agenda iframe — always show default calendar
+
+
+window.addEventListener('load', function() {
+  // Seed calendar embed ID if not set
+  if(!localStorage.getItem('gcal_embed_id')) {
+    localStorage.setItem('gcal_embed_id', GCAL_DEFAULT_ID);
+  }
+  const saved = localStorage.getItem('gcal_token');
+  if(saved) { gcalToken = saved; gcalConnected = true; updateGcalUI(true); loadGcalEvents(); }
+  loadGoogleAPI();
+});
+
+
+// ── EVENTO DETAIL HELPERS ─────────────────────────────────────────
+function calcFinEvento(totalSvc) {
+  const desc = parseFloat(document.getElementById('ev-desconto').value)||0;
+  const adic = parseFloat(document.getElementById('ev-adicional').value)||0;
+  const total = totalSvc - desc + adic;
+  const dl = document.getElementById('ev-desc-label');
+  const al = document.getElementById('ev-adic-label');
+  const tl = document.getElementById('ev-total-label');
+  if(dl) dl.textContent = '- ' + fmtMoney(desc);
+  if(al) al.textContent = '+ ' + fmtMoney(adic);
+  if(tl) tl.textContent = fmtMoney(total);
+}
+
+async function salvarDescontoAdicional(evId) {
+  const desc = parseFloat(document.getElementById('ev-desconto').value)||0;
+  const adic = parseFloat(document.getElementById('ev-adicional').value)||0;
+  const { error } = await sb.from('eventos').update({ desconto: desc, adicional: adic }).eq('id', evId);
+  if(error) { alert('Erro ao salvar: ' + error.message); return; }
+  await loadAll();
+  alert('Desconto/adicional salvo!');
+}
+
+function addSvcEvento(evId) {
+  window._addSvcEvId = evId;
+  // Populate catalog select
+  const sel = document.getElementById('asvc-prod');
+  sel.innerHTML = '<option value="">-- Selecione do catalogo --</option>' +
+    CACHE.produtos.map(p => '<option value="' + p.id + '" data-preco="' + p.preco + '" data-cat="' + (p.categoria||'') + '" data-nome="' + p.nome.replace(/"/g,"&quot;") + '">' + p.nome + ' — R$' + Number(p.preco).toFixed(0) + '/pessoa</option>').join('');
+  // Reset fields
+  document.getElementById('asvc-desc').value = '';
+  document.getElementById('asvc-qtd').value  = '1';
+  document.getElementById('asvc-val').value  = '';
+  document.getElementById('asvc-total').value = '';
+  document.getElementById('asvc-obs').value  = '';
+  openModal('addSvcEvento');
+}
+
+function preencherSvcEvento() {
+  const sel = document.getElementById('asvc-prod');
+  const opt = sel.options[sel.selectedIndex];
+  if(!opt || !opt.value) return;
+  document.getElementById('asvc-desc').value = opt.dataset.nome || '';
+  document.getElementById('asvc-val').value  = opt.dataset.preco || '';
+  calcSvcTotal();
+}
+
+function calcSvcTotal() {
+  const qtd = parseFloat(document.getElementById('asvc-qtd').value)||1;
+  const val = parseFloat(document.getElementById('asvc-val').value)||0;
+  document.getElementById('asvc-total').value = 'R$ ' + (qtd * val).toLocaleString('pt-BR', {minimumFractionDigits:2});
+}
+
+async function confirmarAddSvc() {
+  const evId = window._addSvcEvId; if(!evId) return;
+  const desc = document.getElementById('asvc-desc').value.trim();
+  const qtd  = parseFloat(document.getElementById('asvc-qtd').value)||1;
+  const val  = parseFloat(document.getElementById('asvc-val').value)||0;
+  const obs  = document.getElementById('asvc-obs').value.trim();
+  const sel  = document.getElementById('asvc-prod');
+  const opt  = sel.options[sel.selectedIndex];
+  const cat  = opt && opt.value ? (opt.dataset.cat||'') : '';
+  if(!desc) { alert('Informe a descricao do item.'); return; }
+  if(!val)  { alert('Informe o valor do item.'); return; }
+  const totalVal = qtd * val;
+  const descFinal = qtd > 1 ? desc + ' (x' + qtd + ')' : desc;
+  const obsFinal  = obs || null;
+  const { error } = await sb.from('evento_servicos').insert({
+    evento_id: evId, descricao: descFinal, categoria: cat, valor: totalVal, obs: obsFinal
+  });
+  if(error) { alert('Erro: ' + error.message); return; }
+  closeModal('addSvcEvento');
+  await loadAll();
+  verEvento(evId);
+}
+async function excluirSvc(svcId, evId) {
+  if(!confirm('Remover este item?')) return;
+  await sb.from('evento_servicos').delete().eq('id', svcId);
+  await loadAll();
+  verEvento(evId);
+}
+
+function abrirLancEvento(evId) {
+  document.getElementById('lanc-data').value = today();
+  const ev = CACHE.eventos.find(e=>e.id===evId);
+  if(ev) document.getElementById('lanc-desc').value = 'Pagamento - ' + ev.nome;
+  openModal('novoLanc');
+  // After saving, link to this event
+  window._lancEvId = evId;
+}
+
+async function editarEvento(evId) {
+  const ev = CACHE.eventos.find(e=>e.id===evId); if(!ev) return;
+  document.getElementById('ev-nome').value  = ev.nome || '';
+  document.getElementById('ev-tipo').value  = ev.tipo || 'Casamento';
+  document.getElementById('ev-data').value  = ev.data || '';
+  document.getElementById('ev-hora').value  = (ev.horario||'19:00').slice(0,5);
+  document.getElementById('ev-conv').value  = ev.convidados || '';
+  document.getElementById('ev-local').value = ev.local || '';
+  document.getElementById('ev-valor').value = ev.valor || '';
+  document.getElementById('ev-obs').value   = ev.obs || '';
+  if(ev.cliente_id) document.getElementById('ev-cliente').value = ev.cliente_id;
+  window._editEvId = evId;
+  openModal('novoEvento');
+  document.querySelector('#modal-novoEvento .mtitle').childNodes[0].textContent = 'Editar Evento';
+}
+
+async function editarCliente(cliId, evId) {
+  const c = CACHE.clientes.find(x=>x.id===cliId); if(!c) return;
+  document.getElementById('cli-nome').value  = c.nome || '';
+  document.getElementById('cli-tel').value   = c.telefone || '';
+  document.getElementById('cli-email').value = c.email || '';
+  document.getElementById('cli-doc').value   = c.cpf_cnpj || '';
+  document.getElementById('cli-end').value   = c.endereco || '';
+  document.getElementById('cli-obs').value   = c.obs || '';
+  window._editCliId = cliId;
+  window._editCliEvId = evId;
+  openModal('novoCliente');
+  document.querySelector('#modal-novoCliente .mtitle').childNodes[0].textContent = 'Editar Cliente';
+}
+
+function gerarHtmlResumo(evId) {
+  const ev  = CACHE.eventos.find(e=>e.id===evId); if(!ev) return null;
+  const cli = CACHE.clientes.find(c=>c.id===ev.cliente_id);
+  const svcs = (CACHE.eventoServicos||[]).filter(s=>s.evento_id===evId);
+  const pags = CACHE.lancamentos.filter(l=>l.evento_id===evId&&l.tipo==='receita');
+  const desc = Number(ev.desconto||0);
+  const adic = Number(ev.adicional||0);
+  const valorContrato = calcValorContrato(evId);
+  const totalPago = pags.reduce((a,p)=>a+Number(p.valor),0);
+  const saldo = Math.max(0, valorContrato - totalPago);
+  const subtotal = svcs.reduce((a,s)=>a+Number(s.valor),0);
+  return (
+    '<html><head><title>Resumo - ' + ev.nome + '</title>' +
+    '<style>body{font-family:Georgia,serif;max-width:720px;margin:40px auto;color:#2c2320;font-size:14px;line-height:1.6}' +
+    'h1{font-size:22px;margin-bottom:4px}h2{font-size:16px;margin:24px 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px}' +
+    'table{width:100%;border-collapse:collapse;margin-bottom:16px}' +
+    'td,th{padding:8px 12px;border-bottom:1px solid #eee;text-align:left}th{font-weight:600;background:#faf8f5}' +
+    '.total{font-size:16px;font-weight:bold}.green{color:#3d6e4a}.warn{color:#b07a2e}' +
+    '.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px}' +
+    '.logo{font-size:20px;font-weight:bold;color:#7a2f35}' +
+    '@media print{.noprint{display:none}}' +
+    '</style></head><body>' +
+    '<div class="hdr"><div><div class="logo">Santa Maria Buffet & Eventos</div>' +
+    '<div style="font-size:12px;color:#7a6f6b">Resumo Financeiro do Contrato</div></div>' +
+    '<div style="text-align:right;font-size:12px;color:#7a6f6b">Emitido em ' + new Date().toLocaleDateString('pt-BR') + '</div></div>' +
+    '<h1>' + ev.nome + '</h1>' +
+    '<div style="color:#7a6f6b;font-size:13px;margin-bottom:8px">' +
+      fmtDate(ev.data) + (ev.horario ? ' às ' + ev.horario.slice(0,5) : '') +
+      (ev.local ? ' &nbsp;|&nbsp; ' + ev.local : '') +
+      (ev.convidados ? ' &nbsp;|&nbsp; ' + ev.convidados + ' convidados' : '') +
+    '</div>' +
+    (cli ? '<div style="font-size:13px;margin-bottom:24px"><strong>Cliente:</strong> ' + cli.nome +
+      (cli.telefone ? ' &nbsp;|&nbsp; ' + cli.telefone : '') +
+      (cli.email ? ' &nbsp;|&nbsp; ' + cli.email : '') + '</div>' : '') +
+    '<h2>Serviços & Produtos contratados</h2>' +
+    '<table><tr><th>Item</th><th>Categoria</th><th style="text-align:right">Valor</th></tr>' +
+    (svcs.length ?
+      svcs.map(function(s) {
+        return '<tr><td>' + s.descricao + (s.obs ? '<br><small style="color:#aaa">' + s.obs + '</small>' : '') +
+          '</td><td style="color:#888;font-size:12px">' + (s.categoria||'--') + '</td>' +
+          '<td style="text-align:right;font-weight:500">R$ ' + Number(s.valor).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td></tr>';
+      }).join('')
+    : '<tr><td colspan="3" style="color:#aaa">Nenhum item cadastrado</td></tr>') +
+    '</table>' +
+    '<h2>Resumo de valores</h2>' +
+    '<table>' +
+    '<tr><td>Subtotal serviços</td><td style="text-align:right">R$ ' + subtotal.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td></tr>' +
+    (desc ? '<tr><td>Desconto</td><td style="text-align:right;color:#a33535">- R$ ' + desc.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td></tr>' : '') +
+    (adic ? '<tr><td>Adicional / Taxa</td><td style="text-align:right;color:#2563a8">+ R$ ' + adic.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td></tr>' : '') +
+    '<tr style="font-weight:600"><td>Valor total do contrato</td><td style="text-align:right">R$ ' + valorContrato.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td></tr>' +
+    '<tr><td>Total recebido</td><td style="text-align:right;color:#3d6e4a;font-weight:600">R$ ' + totalPago.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td></tr>' +
+    '</table>' +
+    '<div style="padding:14px 18px;border-radius:8px;background:' + (saldo>0?'#fdf3e3':'#eaf3ee') +
+      ';display:flex;justify-content:space-between;align-items:center;margin-bottom:32px">' +
+      '<span class="total">Saldo em aberto</span>' +
+      '<span class="total ' + (saldo>0?'warn':'green') + '">R$ ' + saldo.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span>' +
+    '</div>' +
+    '<h2>Histórico de pagamentos</h2>' +
+    '<table><tr><th>Descrição</th><th>Data</th><th>Forma</th><th style="text-align:right">Valor</th></tr>' +
+    (pags.length ?
+      pags.map(function(p) {
+        return '<tr><td>' + p.descricao + '</td><td>' + fmtDate(p.data) + '</td><td>' +
+          (p.forma_pagamento||'--') + '</td><td style="text-align:right;color:#3d6e4a">R$ ' +
+          Number(p.valor).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td></tr>';
+      }).join('')
+    : '<tr><td colspan="4" style="color:#aaa">Nenhum pagamento registrado</td></tr>') +
+    '</table>' +
+    '<div class="noprint" style="text-align:center;margin-top:40px;display:flex;gap:10px;justify-content:center">' +
+    '<button onclick="window.print()" style="padding:10px 24px;background:#7a2f35;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">Imprimir / Salvar PDF</button>' +
+    '<button onclick="if(window.opener&&window.opener.salvarDocGerado){window.opener.salvarDocGerado(\''+evId+'\',\'Recibo de Pagamento\');window.close();}else{alert(\'Janela pai nao encontrada. Salve manualmente.\');}" style="padding:10px 18px;background:#3d6e4a;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">💾 Salvar no sistema</button>' +
+    '<button onclick="window.close()" style="padding:10px 18px;background:#f0eeeb;color:#2c2320;border:none;border-radius:8px;font-size:14px;cursor:pointer">Fechar</button>' +
+    '</div></body></html>'
+  );
+}
+
+function resumoFinanceiro(evId) {
+  const html = gerarHtmlResumo(evId); if(!html) return;
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+}
+// Hook salvarLanc to link evento if coming from evento detail
+const _origSalvarLanc = salvarLanc;
+async function salvarLanc() {
+  // If opened from evento detail, link the evento_id
+  if(window._lancEvId) {
+    const evId = window._lancEvId;
+    const desc  = document.getElementById('lanc-desc').value.trim();
+    const valor = parseFloat(document.getElementById('lanc-valor').value);
+    const data  = document.getElementById('lanc-data').value;
+    if(!desc||!valor||!data){ alert('Preencha descricao, valor e data.'); return; }
+    const { error } = await sb.from('lancamentos').insert({
+      descricao: desc, tipo: document.getElementById('lanc-tipo').value,
+      valor, data, conta_id: document.getElementById('lanc-conta').value||null,
+      categoria: document.getElementById('lanc-cat').value,
+      forma_pagamento: document.getElementById('lanc-forma').value,
+      obs: document.getElementById('lanc-obs').value,
+      status: 'pago', evento_id: evId,
+    });
+    if(error){ alert('Erro: ' + error.message); return; }
+    closeModal('novoLanc');
+    window._lancEvId = null;
+    await loadAll();
+    verEvento(evId);
+    return;
+  }
+  await _origSalvarLanc();
+}
+
+// Hook salvarEvento to support edit mode
+const _origSalvarEvento = salvarEvento;
+async function salvarEvento() {
+  if(window._editEvId) {
+    const evId  = window._editEvId;
+    const nome  = document.getElementById('ev-nome').value.trim();
+    const data  = document.getElementById('ev-data').value;
+    if(!nome||!data){ alert('Preencha nome e data.'); return; }
+    const horaRaw = document.getElementById('ev-hora').value||'';
+    const obj = {
+      nome, tipo: document.getElementById('ev-tipo').value, data,
+      horario: horaRaw ? (horaRaw.length===5?horaRaw+':00':horaRaw) : null,
+      local: document.getElementById('ev-local').value.trim()||null,
+      convidados: Number(document.getElementById('ev-conv').value)||0,
+      valor: parseFloat(document.getElementById('ev-valor').value)||0,
+      obs: document.getElementById('ev-obs').value.trim()||null,
+      cliente_id: document.getElementById('ev-cliente').value||null,
+    };
+    const { error } = await sb.from('eventos').update(obj).eq('id', evId);
+    if(error){ alert('Erro ao salvar: ' + error.message); return; }
+    closeModal('novoEvento');
+    window._editEvId = null;
+    document.querySelector('#modal-novoEvento .mtitle').childNodes[0].textContent = 'Novo Evento';
+    await loadAll();
+    verEvento(evId);
+    return;
+  }
+  await _origSalvarEvento();
+}
+
+// Hook salvarCliente to support edit mode
+const _origSalvarCliente = salvarCliente;
+async function salvarCliente() {
+  if(window._editCliId) {
+    const cliId = window._editCliId;
+    const evId  = window._editCliEvId;
+    const nome  = document.getElementById('cli-nome').value.trim();
+    if(!nome){ alert('Informe o nome.'); return; }
+    const obj = { nome };
+    const tel   = document.getElementById('cli-tel').value.trim();
+    const email = document.getElementById('cli-email').value.trim();
+    const doc   = document.getElementById('cli-doc').value.trim();
+    const end   = document.getElementById('cli-end').value.trim();
+    const obs   = document.getElementById('cli-obs').value.trim();
+    if(tel)   obj.telefone  = tel;
+    if(email) obj.email     = email;
+    if(doc)   obj.cpf_cnpj = doc;
+    if(end)   obj.endereco  = end;
+    if(obs)   obj.obs       = obs;
+    const { error } = await sb.from('clientes').update(obj).eq('id', cliId);
+    if(error){ alert('Erro: ' + error.message); return; }
+    closeModal('novoCliente');
+    window._editCliId  = null;
+    window._editCliEvId = null;
+    document.querySelector('#modal-novoCliente .mtitle').childNodes[0].textContent = 'Novo Cliente';
+    await loadAll();
+    if(evId) verEvento(evId);
+    return;
+  }
+  await _origSalvarCliente();
+}
+
+
+
+// ── MODELOS ───────────────────────────────────────────────────────
+const MODELOS_DEFAULT = {
+  recibo: {
+    id: 'recibo',
+    nome: 'Recibo de Pagamento',
+    conteudo: 'RECIBO DE PAGAMENTO\n\nSanta Maria Buffet & Eventos\nEmitido em: [HOJE]\n\nEVENTO: [EVENTO]\nData: [DATA]\nLocal: [LOCAL]\nConvidados: [CONVIDADOS]\nCliente: [CLIENTE]\n\n--- SERVICOS E PRODUTOS CONTRATADOS ---\n[ITENS]\n\n--- RESUMO FINANCEIRO ---\nValor total do contrato: [VALOR]\n[DESCONTO][ADICIONAL]Total recebido: [PAGO]\nSaldo em aberto: [SALDO]\n\n--- HISTORICO DE PAGAMENTOS ---\n[PAGAMENTOS]\n\nDeclaramos ter recebido os valores acima descritos.\n\nLocal e data: _____________, ___/___/______\n\n_________________________________\nSanta Maria Buffet\n\n_________________________________\n[CLIENTE] (Contratante)'
+  }
+};
+
+function getModelos() {
+  try {
+    const saved = localStorage.getItem('sm_modelos');
+    const parsed = saved ? JSON.parse(saved) : {};
+    // Always ensure recibo exists
+    if(!parsed.recibo) parsed.recibo = MODELOS_DEFAULT.recibo;
+    return parsed;
+  } catch(e) { return Object.assign({}, MODELOS_DEFAULT); }
+}
+
+function saveModelos(modelos) {
+  localStorage.setItem('sm_modelos', JSON.stringify(modelos));
+}
+
+function listrarModelosBtns(evId) {
+  const modelos = getModelos();
+  return Object.values(modelos).map(m =>
+    '<button type="button" class="btn bsec bsm" ' +
+    'data-evid2="' + evId + '" data-modeloid="' + m.id + '" ' +
+    'onclick="gerarModelo(this.dataset.evid2, this.dataset.modeloid)">' +
+    m.nome + '</button>' +
+    '<button type="button" class="btn bsec bsm" data-modeloid="' + m.id + '" ' +
+    'onclick="abrirEditarModelo(this.dataset.modeloid)" title="Editar">✏</button>'
+  ).join(' ');
+}
+
+function novoModelo() {
+  const id = 'modelo_' + Date.now();
+  document.getElementById('em-nome').value     = 'Novo modelo';
+  document.getElementById('em-conteudo').value = 'Digite aqui o conteudo do modelo.\n\nVariaveis disponiveis:\n[CLIENTE] [EVENTO] [DATA] [LOCAL] [CONVIDADOS] [VALOR] [EMPRESA]';
+  document.getElementById('edit-modelo-title').childNodes[0].textContent = 'Novo modelo';
+  window._editModeloId = id;
+  openModal('editModelo');
+}
+
+function abrirEditarModelo(id) {
+  const modelos = getModelos();
+  const m = modelos[id];
+  if(!m) return;
+  document.getElementById('em-nome').value     = m.nome || '';
+  document.getElementById('em-conteudo').value = m.conteudo || '';
+  document.getElementById('edit-modelo-title').childNodes[0].textContent = 'Editar: ' + m.nome;
+  window._editModeloId = id;
+  openModal('editModelo');
+}
+
+function salvarModelo() {
+  const id   = window._editModeloId; if(!id) return;
+  const nome = document.getElementById('em-nome').value.trim();
+  const conteudo = document.getElementById('em-conteudo').value;
+  if(!nome) { alert('Informe o nome do modelo.'); return; }
+  const modelos = getModelos();
+  modelos[id] = { id, nome, conteudo };
+  saveModelos(modelos);
+  closeModal('editModelo');
+  alert('Modelo "' + nome + '" salvo!');
+}
+
+function excluirModelo() {
+  const id = window._editModeloId; if(!id) return;
+  if(id === 'recibo') { alert('O recibo padrao nao pode ser excluido.'); return; }
+  if(!confirm('Excluir este modelo?')) return;
+  const modelos = getModelos();
+  delete modelos[id];
+  saveModelos(modelos);
+  closeModal('editModelo');
+}
+
+function gerarModelo(evId, modeloId) {
+  const modelos = getModelos();
+  const m = modelos[modeloId]; if(!m) return;
+  gerarDocumento(evId, m.conteudo, m.nome);
+}
+
+function gerarRecibo(evId) { gerarModelo(evId, 'recibo'); }
+
+function gerarDocumento(evId, template, titulo, skipOffer) {
+  const ev  = CACHE.eventos.find(e=>e.id===evId); if(!ev) return;
+
+  // For recibo: use the rich financial summary HTML
+  if(titulo && titulo.toLowerCase().includes('recibo')) {
+    const html = gerarHtmlResumo(evId);
+    if(html) {
+      const win = window.open('', '_blank');
+      win.document.write(html);
+      win.document.close();
+      return;
+    }
+  }
+
+  const cli = CACHE.clientes.find(c=>c.id===ev.cliente_id);
+  const pags = CACHE.lancamentos.filter(l=>l.evento_id===evId&&l.tipo==='receita');
+  const totalPago = pags.reduce((a,p)=>a+Number(p.valor),0);
+  const valorContrato = calcValorContrato(evId);
+
+  const svcs2    = (CACHE.eventoServicos||[]).filter(s=>s.evento_id===evId);
+  const desconto2 = Number(ev.desconto||0);
+  const adicional2= Number(ev.adicional||0);
+  const itensStr  = svcs2.length ? svcs2.map(function(s){ return '  - '+s.descricao+(s.obs?' ('+s.obs+')':'')+' ............ '+fmtMoney(s.valor); }).join('\n') : '  (nenhum item cadastrado)';
+  const pagStr    = pags.length ? pags.map(function(p){ return '  '+fmtDate(p.data)+'  '+(p.forma_pagamento||'')+'  '+fmtMoney(p.valor)+(p.descricao?' - '+p.descricao:''); }).join('\n') : '  (nenhum pagamento registrado)';
+  const descStr2  = desconto2 > 0 ? 'Desconto: - ' + fmtMoney(desconto2) + '\n' : '';
+  const adicStr2  = adicional2 > 0 ? 'Adicional: + ' + fmtMoney(adicional2) + '\n' : '';
+
+  const texto = template
+    .replace(/\[CLIENTE\]/g,    cli ? cli.nome : '(cliente)')
+    .replace(/\[EVENTO\]/g,     ev.nome)
+    .replace(/\[DATA\]/g,       fmtDate(ev.data))
+    .replace(/\[LOCAL\]/g,      ev.local || '(a definir)')
+    .replace(/\[CONVIDADOS\]/g, (ev.convidados||0) + ' pessoas')
+    .replace(/\[VALOR\]/g,      fmtMoney(valorContrato))
+    .replace(/\[EMPRESA\]/g,    'Santa Maria Buffet')
+    .replace(/\[HOJE\]/g,       new Date().toLocaleDateString('pt-BR'))
+    .replace(/\[ITENS\]/g,      itensStr)
+    .replace(/\[PAGO\]/g,       fmtMoney(totalPago))
+    .replace(/\[SALDO\]/g,      fmtMoney(Math.max(0, valorContrato - totalPago)))
+    .replace(/\[DESCONTO\]/g,   descStr2)
+    .replace(/\[ADICIONAL\]/g,  adicStr2)
+    .replace(/\[PAGAMENTOS\]/g, pagStr);
+
+  const win = window.open('', '_blank');
+  win.document.write(
+    '<html><head><title>' + titulo + ' - ' + ev.nome + '</title>' +
+    '<style>body{font-family:Georgia,serif;max-width:720px;margin:48px auto;font-size:14px;line-height:1.8;color:#2c2320}' +
+    'pre{white-space:pre-wrap;font-family:Georgia,serif;font-size:14px;line-height:1.8}' +
+    '.hdr{text-align:center;margin-bottom:40px;border-bottom:2px solid #7a2f35;padding-bottom:16px}' +
+    '.logo{font-size:22px;font-weight:bold;color:#7a2f35;font-family:Georgia,serif}' +
+    '@media print{.noprint{display:none!important}}' +
+    '</style></head><body>' +
+    '<div class="hdr"><div class="logo">Santa Maria Buffet & Eventos</div></div>' +
+    '<pre>' + texto + '</pre>' +
+    '<div class="noprint" style="margin-top:40px;text-align:center;display:flex;gap:10px;justify-content:center">' +
+    '<button onclick="window.print()" style="padding:10px 28px;background:#7a2f35;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">Imprimir / Salvar PDF</button>' +
+    '<button onclick="if(window.opener&&window.opener.salvarDocGerado){window.opener.salvarDocGerado(\''+evId+'\',\''+titulo+'\');window.close();}else{alert(\'Janela pai nao encontrada.\');}" style="padding:10px 18px;background:#3d6e4a;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">💾 Salvar no sistema</button>' +
+    '<button onclick="window.close()" style="padding:10px 18px;background:#f0eeeb;color:#2c2320;border:none;border-radius:8px;font-size:14px;cursor:pointer">Fechar</button>' +
+    '</div></body></html>'
+  );
+  win.document.close();
+}
+
+
+// ── ZAPSIGN INTEGRATION ───────────────────────────────────────────
+async function enviarZapSign(docId, evId) {
+  const ev  = CACHE.eventos.find(e=>e.id===evId); if(!ev) return;
+  const cli = CACHE.clientes.find(c=>c.id===ev.cliente_id);
+
+  if(!cli || !cli.email) {
+    alert('O cliente precisa ter e-mail cadastrado para receber o link de assinatura via ZapSign.');
+    return;
+  }
+
+  const { data: docsArr } = await sb.from('evento_documentos').select('*').eq('id', docId);
+  const doc = docsArr && docsArr[0]; if(!doc) return;
+
+  const btn = document.querySelector('[data-docid="' + docId + '"]');
+  if(btn) { btn.textContent = 'Enviando...'; btn.disabled = true; }
+
+  try {
+    // Gera HTML do documento para enviar ao ZapSign
+    const htmlDoc = gerarHtmlResumo(evId) || ('<html><body><h1>' + doc.nome + '</h1><p>Evento: ' + ev.nome + '</p><p>Cliente: ' + cli.nome + '</p></body></html>');
+    const base64Doc = btoa(unescape(encodeURIComponent(htmlDoc)));
+
+    const payload = {
+      name: doc.nome + ' - ' + ev.nome,
+      lang: 'pt-BR',
+      base64_pdf: base64Doc,
+      signers: [{
+        name:             cli.nome,
+        email:            cli.email,
+        phone_country:    '55',
+        phone:            (cli.telefone||'').replace(/\D/g,''),
+        send_automatic_email: true,
+        send_automatic_whatsapp: !!(cli.telefone),
+      }],
+    };
+
+    const resp = await fetch('/api/zapsign?action=criar', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const respText = await resp.text();
+    let result;
+    try { result = JSON.parse(respText); } catch(e) { throw new Error('Resposta invalida do servidor: ' + respText.slice(0,200)); }
+    if(!resp.ok) {
+      throw new Error('ZapSign erro ' + resp.status + ': ' + (result.error || result.detail || JSON.stringify(result).slice(0,200)));
+    }
+    const docToken   = result.token || '';
+    const signer     = result.signers && result.signers[0];
+    const signToken  = signer ? (signer.token || '') : '';
+    const signLink   = signer ? (signer.sign_url || '') : '';
+
+    // Save ZapSign data to Supabase
+    await sb.from('evento_documentos').update({
+      zapsign_token:        docToken,
+      zapsign_signer_token: signToken,
+      zapsign_link:         signLink,
+    }).eq('id', docId);
+
+    // Send via WhatsApp if phone available
+    const tel = (cli.telefone||'').replace(/\D/g,'');
+    if(tel && signLink) {
+      const msg = encodeURIComponent(
+        'Ola ' + cli.nome.split(' ')[0] + '! Segue o link para assinar o documento "' +
+        doc.nome + '" referente ao seu evento com o Santa Maria Buffet: ' + signLink
+      );
+      window.open('https://wa.me/55' + tel + '?text=' + msg, '_blank');
+    }
+
+    await loadAll();
+    verEvento(evId);
+    alert('Documento enviado via ZapSign! ' + cli.nome + ' recebera o link por e-mail' + (tel?' e WhatsApp':'') + '.');
+
+  } catch(err) {
+    alert('Erro ao enviar para ZapSign:\n' + err.message);
+    if(btn) { btn.textContent = 'Enviar para assinatura'; btn.disabled = false; }
+  }
+}
+
+async function verificarZapSign(docId, evId) {
+  const { data: docsArr } = await sb.from('evento_documentos').select('*').eq('id', docId);
+  const doc = docsArr && docsArr[0];
+  if(!doc || !doc.zapsign_token) { alert('Documento sem token ZapSign.'); return; }
+
+  try {
+    const resp = await fetch('/api/zapsign?action=status&token=' + doc.zapsign_token);
+    if(!resp.ok) throw new Error('Erro ao consultar ZapSign (' + resp.status + ')');
+
+    const result  = await resp.json();
+    const signed  = result.status === 'signed';
+    const pdfUrl  = result.signed_file || result.pdf_file || null;
+
+    if(signed) {
+      await sb.from('evento_documentos').update({
+        assinado:    true,
+        assinado_em: new Date().toISOString(),
+        zapsign_url: pdfUrl,
+      }).eq('id', docId);
+      await loadAll();
+      verEvento(evId);
+      alert('Documento assinado com sucesso! PDF disponivel para download.');
+    } else {
+      const signer = result.signers && result.signers[0];
+      const st     = signer ? signer.status : result.status;
+      alert('Status: ' + (st||'aguardando') + '. O signatario ainda nao assinou.');
+    }
+  } catch(err) {
+    alert('Erro ao verificar status: ' + err.message);
+  }
+}
+
+async function salvarDocGerado(evId, nome) {
+  const { data, error } = await sb.from('evento_documentos').insert({
+    evento_id: evId,
+    nome:      nome + ' — ' + fmtDate(today()),
+    tamanho:   '--',
+    assinado:  false,
+  }).select();
+  if(error) { console.error('Erro ao salvar doc:', error.message); return; }
+  await loadAll();
+  const docId = data && data[0] && data[0].id;
+  verEvento(evId);
+  if(docId) {
+    setTimeout(() => {
+      if(confirm('Deseja enviar "' + nome + '" para assinatura via ZapSign agora?')) {
+        enviarZapSign(docId, evId);
+      }
+    }, 400);
+  }
+}
+
+initAuth();
+</script>
+</body>
+</html>com/css2?family=Playfair+Display:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* ── RESET & VARS ── */
