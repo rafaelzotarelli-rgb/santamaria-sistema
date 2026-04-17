@@ -272,12 +272,14 @@ textarea.fi{resize:vertical;min-height:64px}
     <!-- ── AGENDA ── -->
     <div class="page" id="page-agenda">
       <div class="topbar">
-        <div><div class="ptitle">Agenda</div><div class="psub">Calendário de eventos.</div></div>
+        <div><div class="ptitle">Agenda</div><div class="psub">Calendário sincronizado com Google Agenda.</div></div>
         <div style="display:flex;gap:8px">
-          <button class="btn bsec" onclick="window.open('https://calendar.google.com','_blank')">↗ Google Agenda</button>
+          <button class="btn bsec" id="btn-gcal-connect" onclick="connectGoogle()">🔗 Conectar Google Agenda</button>
+          <button class="btn bsec" id="btn-gcal-disconnect" style="display:none" onclick="disconnectGoogle()">✕ Desconectar</button>
           <button class="btn bp" onclick="openModal('novoEvento')">+ Novo Evento</button>
         </div>
       </div>
+      <div id="gcal-status-bar" style="display:none;align-items:center;gap:10px;padding:10px 16px;border-radius:10px;background:var(--success-bg);border:.5px solid var(--success);margin-bottom:14px;font-size:13px;color:var(--success)"></div>
       <div class="card" style="padding:0;overflow:hidden">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:.5px solid var(--border)">
           <button class="btn bsec bsm" onclick="calNav(-1)">‹</button>
@@ -286,6 +288,10 @@ textarea.fi{resize:vertical;min-height:64px}
         </div>
         <div class="cal-grid-hdr" id="cal-hdr"></div>
         <div class="cal-grid" id="cal-grid"></div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="ctitle">Eventos do Google Agenda <span id="gcal-sync-badge" class="badge bn" style="font-size:11px">Não conectado</span></div>
+        <div id="gcal-events-list"><div class="empty">Conecte o Google Agenda para ver os eventos aqui.</div></div>
       </div>
     </div>
  
@@ -849,6 +855,7 @@ async function salvarEvento() {
   if(error){alert('Erro ao salvar: '+error.message);return;}
   closeModal('novoEvento');
   await loadAll();
+  if(gcalConnected) addEventoToGcal({nome,data:document.getElementById('ev-data').value,horario:document.getElementById('ev-hora').value,local:document.getElementById('ev-local').value,tipo:document.getElementById('ev-tipo').value,convidados:Number(document.getElementById('ev-conv').value)||0});
   renderEventos();
   updateFuBadge();
 }
@@ -1206,6 +1213,126 @@ async function executarImport(data) {
 }
  
 // ── INIT ──────────────────────────────────────────────────────────
+ 
+// ── GOOGLE CALENDAR ───────────────────────────────────────────────
+const GCAL_CLIENT_ID = '878329307870-o3naodglalr13tk8ig522ng93f89h946.apps.googleusercontent.com';
+const GCAL_SCOPES = 'https://www.googleapis.com/auth/calendar';
+let gcalToken = null;
+let gcalConnected = false;
+ 
+function loadGoogleAPI() {
+  if(window.google && window.google.accounts) return;
+  const s = document.createElement('script');
+  s.src = 'https://accounts.google.com/gsi/client';
+  s.async = true; s.defer = true;
+  document.head.appendChild(s);
+}
+ 
+function connectGoogle() {
+  loadGoogleAPI();
+  setTimeout(function() {
+    if(!window.google || !window.google.accounts) { alert('Aguarde e tente novamente.'); return; }
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: GCAL_CLIENT_ID,
+      scope: GCAL_SCOPES,
+      callback: async function(resp) {
+        if(resp.error) { alert('Erro ao conectar: ' + resp.error); return; }
+        gcalToken = resp.access_token;
+        gcalConnected = true;
+        localStorage.setItem('gcal_token', gcalToken);
+        updateGcalUI(true);
+        await syncEventosToGcal();
+        await loadGcalEvents();
+      },
+    });
+    client.requestAccessToken();
+  }, 1000);
+}
+ 
+function disconnectGoogle() {
+  gcalToken = null; gcalConnected = false;
+  localStorage.removeItem('gcal_token');
+  updateGcalUI(false);
+}
+ 
+function updateGcalUI(connected) {
+  const btnC  = document.getElementById('btn-gcal-connect');
+  const btnD  = document.getElementById('btn-gcal-disconnect');
+  const bar   = document.getElementById('gcal-status-bar');
+  const badge = document.getElementById('gcal-sync-badge');
+  if(!btnC) return;
+  if(connected) {
+    btnC.style.display = 'none'; btnD.style.display = '';
+    bar.style.display = 'flex';
+    bar.textContent = 'Google Agenda conectado — eventos sincronizados automaticamente';
+    if(badge) { badge.textContent = 'Sincronizado'; badge.className = 'badge bs'; }
+  } else {
+    btnC.style.display = ''; btnD.style.display = 'none';
+    bar.style.display = 'none';
+    if(badge) { badge.textContent = 'Nao conectado'; badge.className = 'badge bn'; }
+  }
+}
+ 
+async function gcalFetch(url, options) {
+  if(!gcalToken) return null;
+  options = options || {};
+  const res = await fetch(url, Object.assign({}, options, {
+    headers: Object.assign({ 'Authorization': 'Bearer ' + gcalToken, 'Content-Type': 'application/json' }, options.headers || {})
+  }));
+  if(res.status === 401) { disconnectGoogle(); return null; }
+  if(!res.ok) return null;
+  return res.json();
+}
+ 
+async function loadGcalEvents() {
+  const now   = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
+  const end   = new Date(now.getFullYear(), now.getMonth() + 3, 1).toISOString();
+  const data  = await gcalFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=' + encodeURIComponent(start) + '&timeMax=' + encodeURIComponent(end) + '&singleEvents=true&orderBy=startTime&maxResults=50');
+  if(!data || !data.items) return;
+  const el = document.getElementById('gcal-events-list');
+  if(!el) return;
+  const events = data.items.filter(function(e) { return e.status !== 'cancelled'; });
+  if(!events.length) { el.innerHTML = '<div class="empty">Nenhum evento no Google Agenda neste periodo.</div>'; return; }
+  el.innerHTML = events.map(function(e) {
+    const st = (e.start && (e.start.dateTime || e.start.date)) || '';
+    const d = st ? new Date(st).toLocaleDateString('pt-BR', {day:'2-digit',month:'short',year:'numeric'}) : '---';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:9px;background:var(--cream);border:.5px solid var(--border);margin-bottom:7px"><div><div style="font-size:13px;font-weight:500">' + (e.summary||'Sem titulo') + '</div><div style="font-size:11px;color:var(--muted)">' + d + (e.location ? ' - ' + e.location : '') + '</div></div><span class="badge bi" style="font-size:10px">Google</span></div>';
+  }).join('');
+  mergeGcalIntoCalendar(events);
+}
+ 
+function mergeGcalIntoCalendar(gcalEvents) {
+  gcalEvents.forEach(function(e) {
+    const dateStr = ((e.start && (e.start.dateTime || e.start.date)) || '').slice(0,10);
+    if(!dateStr) return;
+    const exists = CACHE.eventos.some(function(ev) { return ev.nome === e.summary && ev.data === dateStr; });
+    if(!exists) CACHE.eventos.push({ id: 'gcal_' + e.id, nome: e.summary || 'Evento Google', data: dateStr, tipo: 'Google Agenda', status: 'confirmado', local: e.location || '', convidados: 0, valor: 0, _gcal: true });
+  });
+  renderCalendar();
+}
+ 
+async function syncEventosToGcal() {
+  if(!gcalToken) return;
+  const futuros = CACHE.eventos.filter(function(e) { return e.data >= today() && !e._gcal; });
+  for(let i = 0; i < Math.min(futuros.length, 10); i++) {
+    const ev = futuros[i];
+    await gcalFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', { method: 'POST', body: JSON.stringify({ summary: ev.nome, location: ev.local || '', start: { date: ev.data }, end: { date: ev.data } }) });
+  }
+}
+ 
+async function addEventoToGcal(ev) {
+  if(!gcalConnected || !gcalToken) return;
+  const hasTime = ev.horario && ev.horario.length > 0;
+  await gcalFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', { method: 'POST', body: JSON.stringify({ summary: ev.nome, location: ev.local || '', start: hasTime ? { dateTime: ev.data + 'T' + ev.horario + ':00', timeZone: 'America/Sao_Paulo' } : { date: ev.data }, end: hasTime ? { dateTime: ev.data + 'T' + ev.horario + ':00', timeZone: 'America/Sao_Paulo' } : { date: ev.data } }) });
+}
+ 
+window.addEventListener('load', function() {
+  const saved = localStorage.getItem('gcal_token');
+  if(saved) { gcalToken = saved; gcalConnected = true; updateGcalUI(true); loadGcalEvents(); }
+  loadGoogleAPI();
+});
+ 
 initAuth();
 </script>
 </body>
