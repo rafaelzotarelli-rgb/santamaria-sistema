@@ -351,7 +351,10 @@ textarea.fi{resize:vertical;min-height:64px}
           <div class="table-wrap">
             <table><thead><tr>
               <th>Evento</th><th>Data</th><th>Convidados</th>
-              <th class="fin-only">Valor</th><th>Status</th><th></th>
+              <th class="fin-only">Contrato</th>
+              <th class="fin-only">Pago</th>
+              <th class="fin-only">Em aberto</th>
+              <th>Status</th><th></th>
             </tr></thead>
             <tbody id="ev-tbody"></tbody>
             </table>
@@ -808,16 +811,52 @@ function calNav(dir) { calMonth+=dir; if(calMonth>11){calMonth=0;calYear++;} if(
 function renderEventos() {
   document.getElementById('ev-lista-view').style.display='block';
   document.getElementById('ev-detalhe-view').style.display='none';
-  document.getElementById('ev-tbody').innerHTML = CACHE.eventos.map(ev=>{
-    const s=STATUS_MAP[ev.status]||{l:ev.status,c:'bn'};
-    return `<tr>
-      <td><div style="font-weight:500">${ev.nome}</div><div style="font-size:11px;color:var(--muted)">${ev.local||'--'}</div></td>
-      <td>${fmtDate(ev.data)}</td><td>${ev.convidados||0}</td>
-      ${isDono?`<td>${fmtMoney(ev.valor)}</td>`:''}
-      <td><span class="badge ${s.c}">${s.l}</span></td>
-      <td><button class="btn bsec bsm" onclick="verEvento('${ev.id}')">Ver ›</button></td>
-    </tr>`;
-  }).join('')||`<tr><td colspan="6" class="empty">Nenhum evento cadastrado</td></tr>`;
+  const totalContrato = CACHE.eventos.reduce((a,e)=>a+Number(e.valor||0),0);
+  const totalPago = CACHE.eventos.reduce((a,e)=>a+CACHE.lancamentos.filter(l=>l.evento_id===e.id&&l.tipo==='receita').reduce((b,l)=>b+Number(l.valor),0),0);
+  const totalAberto = totalContrato - totalPago;
+  const cols = isDono ? 8 : 5;
+  document.getElementById('ev-tbody').innerHTML = `
+    ${isDono ? `<tr style="background:var(--cream);font-weight:500">
+      <td colspan="3" style="font-size:12px;color:var(--muted)">Totais — ${CACHE.eventos.length} eventos</td>
+      <td style="font-size:13px;font-weight:500">${fmtMoney(totalContrato)}</td>
+      <td style="font-size:13px;font-weight:500;color:var(--success)">${fmtMoney(totalPago)}</td>
+      <td style="font-size:13px;font-weight:500;color:var(--warn)">${fmtMoney(totalAberto)}</td>
+      <td colspan="2"></td>
+    </tr>` : ''}
+    ${CACHE.eventos.map(ev=>{
+      const s = STATUS_MAP[ev.status]||{l:ev.status,c:'bn'};
+      const pago = CACHE.lancamentos.filter(l=>l.evento_id===ev.id&&l.tipo==='receita').reduce((a,l)=>a+Number(l.valor),0);
+      const aberto = Number(ev.valor||0) - pago;
+      return `<tr>
+        <td><div style="font-weight:500">${ev.nome}</div><div style="font-size:11px;color:var(--muted)">${ev.local||'--'}</div></td>
+        <td style="white-space:nowrap">${fmtDate(ev.data)}</td>
+        <td>${ev.convidados||0}</td>
+        ${isDono?`
+          <td style="font-weight:500">${fmtMoney(ev.valor)}</td>
+          <td style="color:var(--success);font-weight:500">${fmtMoney(pago)}</td>
+          <td style="color:${aberto>0?'var(--warn)':'var(--success)'};font-weight:500">${fmtMoney(aberto)}</td>
+        `:''}
+        <td><span class="badge ${s.c}">${s.l}</span></td>
+        <td>
+          <div style="display:flex;gap:4px">
+            <button type="button" class="btn bsec bsm" onclick="verEvento('${ev.id}')">Ver ›</button>
+            ${isDono?`<button type="button" class="btn bsm" style="background:var(--danger-bg);color:var(--danger);border:.5px solid var(--danger-bg)" data-evid="${ev.id}" onclick="excluirEvento(this.dataset.evid)">✕</button>`:''},
+          </div>
+        </td>
+      </tr>`;
+    }).join('')}
+  `||`<tr><td colspan="${cols}" class="empty">Nenhum evento cadastrado</td></tr>`;
+}
+
+async function excluirEvento(id) {
+  const ev = CACHE.eventos.find(e=>e.id===id);
+  const nome = ev ? ev.nome : 'este evento';
+  if(!confirm('Excluir "' + nome + '"?\n\nEsta acao nao pode ser desfeita.')) return;
+  const { error } = await sb.from('eventos').delete().eq('id', id);
+  if(error) { alert('Erro ao excluir: ' + error.message); return; }
+  await loadAll();
+  renderEventos();
+  renderDashboard();
 }
 
 async function verEvento(id) {
