@@ -184,6 +184,7 @@ textarea.fi{resize:vertical;min-height:64px}
   .funnel{grid-template-columns:1fr 1fr}
 }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 
@@ -2046,9 +2047,12 @@ function gerarHtmlResumo(evId) {
     '</table>' +
     '<div class="noprint" style="text-align:center;margin-top:40px;display:flex;gap:10px;justify-content:center">' +
     '<button onclick="window.print()" style="padding:10px 24px;background:#7a2f35;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">Imprimir / Salvar PDF</button>' +
-    '<button onclick="if(window.opener&&window.opener.salvarDocGerado){window.opener.salvarDocGerado(\''+evId+'\',\'Recibo de Pagamento\');window.close();}else{alert(\'Janela pai nao encontrada. Salve manualmente.\');}" style="padding:10px 18px;background:#3d6e4a;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">💾 Salvar no sistema</button>' +
+    '<button id="btnSalvar" onclick="salvarSistema()" style="padding:10px 18px;background:#3d6e4a;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">💾 Salvar no sistema</button>' +
     '<button onclick="window.close()" style="padding:10px 18px;background:#f0eeeb;color:#2c2320;border:none;border-radius:8px;font-size:14px;cursor:pointer">Fechar</button>' +
-    '</div></body></html>'
+    '</div>' +
+    '<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>' +
+    '<script>var _evId="'+evId+'",_nome="Recibo de Pagamento";function salvarSistema(){var b=document.getElementById("btnSalvar");if(b){b.textContent="Gerando...";b.disabled=true;}var e=document.body.cloneNode(true);e.querySelectorAll(".noprint").forEach(function(n){n.remove();});html2pdf().set({margin:8,image:{type:"jpeg",quality:0.95},html2canvas:{scale:2},jsPDF:{unit:"mm",format:"a4"}}).from(e).outputPdf("datauristring").then(function(p){var b64=p.split(",")[1];if(window.opener){window.opener.postMessage({type:"PDF_PRONTO",evId:_evId,nome:_nome,base64:b64},"*");}window.close();});}<\/script>' +
+    '</body></html>'
   );
 }
 
@@ -2291,9 +2295,12 @@ function gerarDocumento(evId, template, titulo, skipOffer) {
     '<pre>' + texto + '</pre>' +
     '<div class="noprint" style="margin-top:40px;text-align:center;display:flex;gap:10px;justify-content:center">' +
     '<button onclick="window.print()" style="padding:10px 28px;background:#7a2f35;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">Imprimir / Salvar PDF</button>' +
-    '<button onclick="if(window.opener&&window.opener.salvarDocGerado){window.opener.salvarDocGerado(\''+evId+'\',\''+titulo+'\');window.close();}else{alert(\'Janela pai nao encontrada.\');}" style="padding:10px 18px;background:#3d6e4a;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">💾 Salvar no sistema</button>' +
+    '<button id="btnSalvar" onclick="salvarSistema()" style="padding:10px 18px;background:#3d6e4a;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">💾 Salvar no sistema</button>' +
     '<button onclick="window.close()" style="padding:10px 18px;background:#f0eeeb;color:#2c2320;border:none;border-radius:8px;font-size:14px;cursor:pointer">Fechar</button>' +
-    '</div></body></html>'
+    '</div>' +
+    '<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>' +
+    '<script>var _evId="'+evId+'",_nome="'+titulo+'";function salvarSistema(){var b=document.getElementById("btnSalvar");if(b){b.textContent="Gerando...";b.disabled=true;}var e=document.body.cloneNode(true);e.querySelectorAll(".noprint").forEach(function(n){n.remove();});html2pdf().set({margin:8,image:{type:"jpeg",quality:0.95},html2canvas:{scale:2},jsPDF:{unit:"mm",format:"a4"}}).from(e).outputPdf("datauristring").then(function(p){var b64=p.split(",")[1];if(window.opener){window.opener.postMessage({type:"PDF_PRONTO",evId:_evId,nome:_nome,base64:b64},"*");}window.close();});}<\/script>' +
+    '</body></html>'
   );
   win.document.close();
 }
@@ -2363,42 +2370,13 @@ async function enviarZapSign(docId, evId) {
   if(btn) { btn.textContent = 'Enviando...'; btn.disabled = true; }
 
   try {
-    // Monta texto do documento (PDF gerado no servidor)
-    const svcsZ    = (CACHE.eventoServicos||[]).filter(s=>s.evento_id===evId);
-    const pagsZ    = CACHE.lancamentos.filter(l=>l.evento_id===evId&&l.tipo==='receita');
-    const valZ     = calcValorContrato(evId);
-    const pagoZ    = pagsZ.reduce((a,p)=>a+Number(p.valor),0);
-    const saldoZ   = Math.max(0, valZ - pagoZ);
-    const textoLinhas = [
-      'RESUMO FINANCEIRO DO CONTRATO',
-      'Santa Maria Buffet & Eventos',
-      'Emitido em: ' + new Date().toLocaleDateString('pt-BR'),
-      '',
-      'EVENTO: ' + ev.nome,
-      'Data: ' + fmtDate(ev.data) + (ev.horario?' as '+ev.horario.slice(0,5):'') + ' | Local: ' + (ev.local||'-'),
-      'Convidados: ' + (ev.convidados||0) + ' | Cliente: ' + cli.nome,
-      (cli.telefone?'Telefone: '+cli.telefone:'') ,
-      (cli.email?'Email: '+cli.email:''),
-      '',
-      'SERVICOS E PRODUTOS:',
-    ].concat(
-      svcsZ.length ? svcsZ.map(s=>'  - '+s.descricao+' ... '+fmtMoney(s.valor)) : ['  (nenhum item)']
-    ).concat([
-      '',
-      'RESUMO FINANCEIRO:',
-      '  Valor total do contrato: ' + fmtMoney(valZ),
-      '  Total recebido: ' + fmtMoney(pagoZ),
-      '  Saldo em aberto: ' + fmtMoney(saldoZ),
-      '',
-      'HISTORICO DE PAGAMENTOS:',
-    ]).concat(
-      pagsZ.length ? pagsZ.map(p=>'  '+fmtDate(p.data)+' - '+fmtMoney(p.valor)+' ('+( p.forma_pagamento||'')+ ')') : ['  (nenhum pagamento)']
-    );
+    // Usa PDF gerado pelo html2pdf e salvo no localStorage
+    const pdfBase64 = localStorage.getItem('pdf_b64_' + docId);
+    if(pdfBase64) localStorage.removeItem('pdf_b64_' + docId);
 
     const payload = {
-      nome:   doc.nome + ' - ' + ev.nome,
-      name:   doc.nome + ' - ' + ev.nome,
-      texto:  textoLinhas,
+      name:       doc.nome + ' - ' + ev.nome,
+      base64_pdf: pdfBase64 || null,
       signers: (function() {
         var _dNome  = (currentUser && currentUser.nome)  || 'Santa Maria Buffet';
         var _dEmail = (currentUser && currentUser.email) || '';
@@ -2596,6 +2574,45 @@ async function salvarDocGerado(evId, nome) {
       enviarZapSign(docId, evId);
     }
   }
+}
+
+
+// ── RECEBER PDF DO POPUP VIA POSTMESSAGE ─────────────────────────
+window.addEventListener('message', function(event) {
+  if(event.data && event.data.type === 'PDF_PRONTO') {
+    var evId   = event.data.evId;
+    var nome   = event.data.nome;
+    var b64    = event.data.base64;
+    salvarDocGeradoPdf(evId, nome, b64);
+  }
+});
+
+async function salvarDocGeradoPdf(evId, nome, pdfBase64) {
+  const { data, error } = await sb.from('evento_documentos').insert({
+    evento_id: evId,
+    nome:      nome + ' — ' + fmtDate(today()),
+    tamanho:   '--',
+    assinado:  false,
+  }).select();
+  if(error) { alert('Erro ao salvar: ' + error.message); return; }
+  const docId = data && data[0] && data[0].id;
+  // Salva o base64 do PDF no localStorage temporariamente para usar no envio
+  if(pdfBase64 && docId) {
+    localStorage.setItem('pdf_b64_' + docId, pdfBase64);
+  }
+  await verEvento(evId);
+  // Ativa aba docs
+  setTimeout(function() {
+    document.querySelectorAll('#ev-dtabs .tab').forEach(function(b){ b.classList.remove('active'); });
+    document.querySelectorAll('[id^="ev-tab-"]').forEach(function(t){ t.classList.remove('active'); });
+    var dt = document.querySelector('#ev-dtabs .tab[data-ev-tab="docs"]');
+    var dc = document.getElementById('ev-tab-docs');
+    if(dt) dt.classList.add('active');
+    if(dc) dc.classList.add('active');
+    if(docId && confirm('Deseja enviar "' + nome + '" para assinatura via ZapSign agora?')) {
+      enviarZapSign(docId, evId);
+    }
+  }, 300);
 }
 
 initAuth();
