@@ -1148,21 +1148,21 @@ async function verEvento(id) {
               '<div style="width:30px;height:30px;border-radius:7px;background:var(--info-bg);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">📄</div>' +
               '<div style="flex:1"><div style="font-size:13px;font-weight:500">' + d.nome + '</div>' +
               '<div style="font-size:11px;color:var(--muted)">' + fmtDate((d.created_at||'').split('T')[0]) + '</div></div>' +
+              '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
               (d.assinado ?
-                '<div style="display:flex;align-items:center;gap:6px">' +
-                  '<span class="badge bs">✓ Assinado</span>' +
-                  (d.zapsign_url ? '<a href="' + d.zapsign_url + '" target="_blank" class="btn bsec bsm" style="font-size:10px">📥 PDF</a>' : '') +
-                '</div>'
+                '<span class="badge bs">✓ Assinado</span>' +
+                (d.zapsign_url ? '<a href="' + d.zapsign_url + '" target="_blank" class="btn bsec bsm" style="font-size:10px">📥 PDF</a>' : '')
               :
-                '<div style="display:flex;align-items:center;gap:6px">' +
-                  '<span class="badge bw">Pendente</span>' +
-                  (d.zapsign_token ?
-                    '<span style="font-size:10px;color:var(--muted)">Aguardando assinatura</span>'
-                  :
-                    '<button type="button" class="btn bsm" style="background:var(--info-bg);color:var(--info);border:none;font-size:10px" data-docid="' + d.id + '" data-evid2="' + id + '" onclick="enviarZapSign(this.dataset.docid,this.dataset.evid2)">✍ Enviar para assinatura</button>'
-                  ) +
-                '</div>'
+                '<span class="badge bw">Pendente</span>' +
+                (d.zapsign_token ?
+                  '<button type="button" class="btn bsm" style="background:var(--warn-bg);color:var(--warn);border:none;font-size:10px" data-docid="' + d.id + '" data-evid2="' + id + '" onclick="verificarZapSign(this.dataset.docid,this.dataset.evid2,false)">Verificar</button>' +
+                  '<button type="button" class="btn bsm" style="background:var(--danger-bg);color:var(--danger);border:none;font-size:10px" data-docid="' + d.id + '" data-evid2="' + id + '" onclick="excluirDocumento(this.dataset.docid,this.dataset.evid2)">✕ Cancelar e excluir</button>'
+                :
+                  '<button type="button" class="btn bsm" style="background:var(--info-bg);color:var(--info);border:none;font-size:10px" data-docid="' + d.id + '" data-evid2="' + id + '" onclick="enviarZapSign(this.dataset.docid,this.dataset.evid2)">✍ Enviar p/ assinatura</button>' +
+                  '<button type="button" class="btn bsm" style="background:var(--danger-bg);color:var(--danger);border:none;font-size:10px" data-docid="' + d.id + '" data-evid2="' + id + '" onclick="excluirDocumento(this.dataset.docid,this.dataset.evid2)">✕</button>'
+                )
               ) +
+              '</div>' +
             '</div>'
           ).join('') || '<div class="empty" style="margin-top:8px">Nenhum documento enviado</div>') +
           '<div class="uparea" data-evid2="' + id + '" onclick="simUpload(this.dataset.evid2)" style="margin-top:10px;padding:14px">' +
@@ -2462,6 +2462,42 @@ async function enviarZapSign(docId, evId) {
     alert('Erro ao enviar para ZapSign:\n' + err.message);
     if(btn) { btn.textContent = 'Enviar para assinatura'; btn.disabled = false; }
   }
+}
+
+async function excluirDocumento(docId, evId) {
+  const { data: docsArr } = await sb.from('evento_documentos').select('*').eq('id', docId);
+  const doc = docsArr && docsArr[0];
+  if(!doc) return;
+
+  const temZapSign = !!(doc.zapsign_token);
+  const msg = temZapSign
+    ? 'Excluir "' + doc.nome + '"?\n\nIsso tambem cancelara a solicitacao de assinatura no ZapSign.'
+    : 'Excluir "' + doc.nome + '"?';
+
+  if(!confirm(msg)) return;
+
+  // Cancela no ZapSign se tiver token
+  if(temZapSign) {
+    try {
+      await fetch('/api/zapsign?action=cancelar&token=' + doc.zapsign_token, { method: 'POST' });
+    } catch(e) { /* continua mesmo se falhar */ }
+  }
+
+  // Remove do banco
+  const { error } = await sb.from('evento_documentos').delete().eq('id', docId);
+  if(error) { alert('Erro ao excluir: ' + error.message); return; }
+
+  await loadAll();
+  // Recarrega e mantém na aba docs
+  verEvento(evId);
+  setTimeout(function() {
+    var docsTab = document.querySelector('#ev-dtabs .tab[data-ev-tab="docs"]');
+    var docsContent = document.getElementById('ev-tab-docs');
+    document.querySelectorAll('#ev-dtabs .tab').forEach(function(b){ b.classList.remove('active'); });
+    document.querySelectorAll('[id^="ev-tab-"]').forEach(function(t){ t.classList.remove('active'); });
+    if(docsTab) docsTab.classList.add('active');
+    if(docsContent) docsContent.classList.add('active');
+  }, 200);
 }
 
 async function verificarZapSign(docId, evId, silencioso) {
