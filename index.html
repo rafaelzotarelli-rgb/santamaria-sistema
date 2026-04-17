@@ -1975,77 +1975,86 @@ async function editarCliente(cliId, evId) {
   document.querySelector('#modal-novoCliente .mtitle').childNodes[0].textContent = 'Editar Cliente';
 }
 
-function resumoFinanceiro(evId) {
-  const ev   = CACHE.eventos.find(e=>e.id===evId); if(!ev) return;
-  const cli  = CACHE.clientes.find(c=>c.id===ev.cliente_id);
-  const svcs = CACHE.eventos._svcs || [];
+function gerarHtmlResumo(evId) {
+  const ev  = CACHE.eventos.find(e=>e.id===evId); if(!ev) return null;
+  const cli = CACHE.clientes.find(c=>c.id===ev.cliente_id);
+  const svcs = (CACHE.eventoServicos||[]).filter(s=>s.evento_id===evId);
   const pags = CACHE.lancamentos.filter(l=>l.evento_id===evId&&l.tipo==='receita');
-  const totalSvc  = pags.length ? Number(ev.valor||0) : 0;
-  const desc      = Number(ev.desconto||0);
-  const adic      = Number(ev.adicional||0);
-  const valorContrato = Number(ev.valor||0);
+  const desc = Number(ev.desconto||0);
+  const adic = Number(ev.adicional||0);
+  const valorContrato = calcValorContrato(evId);
   const totalPago = pags.reduce((a,p)=>a+Number(p.valor),0);
-  const saldo     = valorContrato - totalPago;
-
-  const win = window.open('', '_blank');
-  win.document.write(
+  const saldo = Math.max(0, valorContrato - totalPago);
+  const subtotal = svcs.reduce((a,s)=>a+Number(s.valor),0);
+  return (
     '<html><head><title>Resumo - ' + ev.nome + '</title>' +
-    '<style>body{font-family:Georgia,serif;max-width:700px;margin:40px auto;color:#2c2320;font-size:14px;line-height:1.6}' +
+    '<style>body{font-family:Georgia,serif;max-width:720px;margin:40px auto;color:#2c2320;font-size:14px;line-height:1.6}' +
     'h1{font-size:22px;margin-bottom:4px}h2{font-size:16px;margin:24px 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px}' +
     'table{width:100%;border-collapse:collapse;margin-bottom:16px}' +
     'td,th{padding:8px 12px;border-bottom:1px solid #eee;text-align:left}th{font-weight:600;background:#faf8f5}' +
-    '.total{font-size:16px;font-weight:bold}.green{color:#3d6e4a}.red{color:#a33535}.warn{color:#b07a2e}' +
-    '.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px}' +
+    '.total{font-size:16px;font-weight:bold}.green{color:#3d6e4a}.warn{color:#b07a2e}' +
+    '.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px}' +
     '.logo{font-size:20px;font-weight:bold;color:#7a2f35}' +
-    '@media print{button{display:none}}' +
+    '@media print{.noprint{display:none}}' +
     '</style></head><body>' +
-    '<div class="header"><div><div class="logo">Santa Maria Buffet</div><div style="font-size:12px;color:#7a6f6b">Resumo Financeiro do Contrato</div></div>' +
+    '<div class="hdr"><div><div class="logo">Santa Maria Buffet & Eventos</div>' +
+    '<div style="font-size:12px;color:#7a6f6b">Resumo Financeiro do Contrato</div></div>' +
     '<div style="text-align:right;font-size:12px;color:#7a6f6b">Emitido em ' + new Date().toLocaleDateString('pt-BR') + '</div></div>' +
     '<h1>' + ev.nome + '</h1>' +
     '<div style="color:#7a6f6b;font-size:13px;margin-bottom:8px">' +
-      fmtDate(ev.data) + (ev.horario?' às '+ev.horario.slice(0,5):'') +
+      fmtDate(ev.data) + (ev.horario ? ' às ' + ev.horario.slice(0,5) : '') +
       (ev.local ? ' &nbsp;|&nbsp; ' + ev.local : '') +
       (ev.convidados ? ' &nbsp;|&nbsp; ' + ev.convidados + ' convidados' : '') +
     '</div>' +
-    (cli ? '<div style="font-size:13px;margin-bottom:24px"><strong>Cliente:</strong> ' + cli.nome + (cli.telefone?' &nbsp;|&nbsp; '+cli.telefone:'') + (cli.email?' &nbsp;|&nbsp; '+cli.email:'') + '</div>' : '') +
-    '<h2>Servicos & Produtos contratados</h2>' +
+    (cli ? '<div style="font-size:13px;margin-bottom:24px"><strong>Cliente:</strong> ' + cli.nome +
+      (cli.telefone ? ' &nbsp;|&nbsp; ' + cli.telefone : '') +
+      (cli.email ? ' &nbsp;|&nbsp; ' + cli.email : '') + '</div>' : '') +
+    '<h2>Serviços & Produtos contratados</h2>' +
     '<table><tr><th>Item</th><th>Categoria</th><th style="text-align:right">Valor</th></tr>' +
-    (CACHE.lancamentos.length ? '' : '<tr><td colspan="3" style="color:#aaa">Consulte o cadastro do evento para detalhes</td></tr>') +
+    (svcs.length ?
+      svcs.map(function(s) {
+        return '<tr><td>' + s.descricao + (s.obs ? '<br><small style="color:#aaa">' + s.obs + '</small>' : '') +
+          '</td><td style="color:#888;font-size:12px">' + (s.categoria||'--') + '</td>' +
+          '<td style="text-align:right;font-weight:500">R$ ' + Number(s.valor).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td></tr>';
+      }).join('')
+    : '<tr><td colspan="3" style="color:#aaa">Nenhum item cadastrado</td></tr>') +
     '</table>' +
     '<h2>Resumo de valores</h2>' +
     '<table>' +
-    '<tr><td>Valor do contrato</td><td style="text-align:right;font-weight:600">R$ ' + valorContrato.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td></tr>' +
+    '<tr><td>Subtotal serviços</td><td style="text-align:right">R$ ' + subtotal.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td></tr>' +
     (desc ? '<tr><td>Desconto</td><td style="text-align:right;color:#a33535">- R$ ' + desc.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td></tr>' : '') +
-    (adic ? '<tr><td>Adicional/Taxa</td><td style="text-align:right;color:#2563a8">+ R$ ' + adic.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td></tr>' : '') +
+    (adic ? '<tr><td>Adicional / Taxa</td><td style="text-align:right;color:#2563a8">+ R$ ' + adic.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td></tr>' : '') +
+    '<tr style="font-weight:600"><td>Valor total do contrato</td><td style="text-align:right">R$ ' + valorContrato.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td></tr>' +
     '<tr><td>Total recebido</td><td style="text-align:right;color:#3d6e4a;font-weight:600">R$ ' + totalPago.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td></tr>' +
     '</table>' +
-    '<div style="padding:14px 18px;border-radius:8px;background:' + (saldo>0?'#fdf3e3':'#eaf3ee') + ';display:flex;justify-content:space-between;align-items:center;margin-bottom:32px">' +
+    '<div style="padding:14px 18px;border-radius:8px;background:' + (saldo>0?'#fdf3e3':'#eaf3ee') +
+      ';display:flex;justify-content:space-between;align-items:center;margin-bottom:32px">' +
       '<span class="total">Saldo em aberto</span>' +
       '<span class="total ' + (saldo>0?'warn':'green') + '">R$ ' + saldo.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</span>' +
     '</div>' +
-    '<h2>Historico de pagamentos</h2>' +
-    '<table><tr><th>Descricao</th><th>Data</th><th>Forma</th><th style="text-align:right">Valor</th></tr>' +
+    '<h2>Histórico de pagamentos</h2>' +
+    '<table><tr><th>Descrição</th><th>Data</th><th>Forma</th><th style="text-align:right">Valor</th></tr>' +
     (pags.length ?
-      pags.map(p=>
-        '<tr><td>' + p.descricao + '</td><td>' + fmtDate(p.data) + '</td><td>' + (p.forma_pagamento||'--') + '</td><td style="text-align:right;color:#3d6e4a">R$ ' + Number(p.valor).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td></tr>'
-      ).join('')
+      pags.map(function(p) {
+        return '<tr><td>' + p.descricao + '</td><td>' + fmtDate(p.data) + '</td><td>' +
+          (p.forma_pagamento||'--') + '</td><td style="text-align:right;color:#3d6e4a">R$ ' +
+          Number(p.valor).toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</td></tr>';
+      }).join('')
     : '<tr><td colspan="4" style="color:#aaa">Nenhum pagamento registrado</td></tr>') +
     '</table>' +
-    '<div style="text-align:center;margin-top:40px">' +
+    '<div class="noprint" style="text-align:center;margin-top:40px;display:flex;gap:10px;justify-content:center">' +
     '<button onclick="window.print()" style="padding:10px 24px;background:#7a2f35;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">Imprimir / Salvar PDF</button>' +
-    '</div>' +
-    '</body></html>'
+    '<button onclick="window.close()" style="padding:10px 18px;background:#f0eeeb;color:#2c2320;border:none;border-radius:8px;font-size:14px;cursor:pointer">Fechar</button>' +
+    '</div></body></html>'
   );
-  win.document.close();
-  if(!skipOffer) {
-    setTimeout(() => {
-      if(confirm('Deseja salvar este documento no evento e enviar para assinatura via ZapSign?')) {
-        salvarDocGerado(evId, titulo);
-      }
-    }, 600);
-  }
 }
 
+function resumoFinanceiro(evId) {
+  const html = gerarHtmlResumo(evId); if(!html) return;
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+}
 // Hook salvarLanc to link evento if coming from evento detail
 const _origSalvarLanc = salvarLanc;
 async function salvarLanc() {
@@ -2225,18 +2234,36 @@ function gerarRecibo(evId) { gerarModelo(evId, 'recibo'); }
 
 function gerarDocumento(evId, template, titulo, skipOffer) {
   const ev  = CACHE.eventos.find(e=>e.id===evId); if(!ev) return;
+
+  // For recibo: use the rich financial summary HTML
+  if(titulo && titulo.toLowerCase().includes('recibo')) {
+    const html = gerarHtmlResumo(evId);
+    if(html) {
+      const win = window.open('', '_blank');
+      win.document.write(html);
+      win.document.close();
+      setTimeout(function() {
+        if(confirm('Salvar "' + titulo + '" no evento para enviar por assinatura?')) {
+          salvarDocGerado(evId, titulo);
+        }
+      }, 700);
+      return;
+    }
+  }
+
   const cli = CACHE.clientes.find(c=>c.id===ev.cliente_id);
   const pags = CACHE.lancamentos.filter(l=>l.evento_id===evId&&l.tipo==='receita');
   const totalPago = pags.reduce((a,p)=>a+Number(p.valor),0);
   const valorContrato = calcValorContrato(evId);
 
-  const svcs2    = CACHE.eventoServicos ? CACHE.eventoServicos.filter(s=>s.evento_id===evId) : [];
+  const svcs2    = (CACHE.eventoServicos||[]).filter(s=>s.evento_id===evId);
   const desconto2 = Number(ev.desconto||0);
   const adicional2= Number(ev.adicional||0);
-  const itensStr  = svcs2.length ? svcs2.map(s=>'  - '+s.descricao+(s.obs?' ('+s.obs+')':'')+' ............ '+fmtMoney(s.valor)).join('\n') : '  (nenhum item cadastrado)';
-  const pagStr    = pags.length ? pags.map(p=>'  '+fmtDate(p.data)+'  '+(p.forma_pagamento||'')+'  '+fmtMoney(p.valor)+(p.descricao?' - '+p.descricao:'')).join('\n') : '  (nenhum pagamento registrado)';
+  const itensStr  = svcs2.length ? svcs2.map(function(s){ return '  - '+s.descricao+(s.obs?' ('+s.obs+')':'')+' ............ '+fmtMoney(s.valor); }).join('\n') : '  (nenhum item cadastrado)';
+  const pagStr    = pags.length ? pags.map(function(p){ return '  '+fmtDate(p.data)+'  '+(p.forma_pagamento||'')+'  '+fmtMoney(p.valor)+(p.descricao?' - '+p.descricao:''); }).join('\n') : '  (nenhum pagamento registrado)';
   const descStr2  = desconto2 > 0 ? 'Desconto: - ' + fmtMoney(desconto2) + '\n' : '';
   const adicStr2  = adicional2 > 0 ? 'Adicional: + ' + fmtMoney(adicional2) + '\n' : '';
+
   const texto = template
     .replace(/\[CLIENTE\]/g,    cli ? cli.nome : '(cliente)')
     .replace(/\[EVENTO\]/g,     ev.nome)
@@ -2258,18 +2285,23 @@ function gerarDocumento(evId, template, titulo, skipOffer) {
     '<html><head><title>' + titulo + ' - ' + ev.nome + '</title>' +
     '<style>body{font-family:Georgia,serif;max-width:720px;margin:48px auto;font-size:14px;line-height:1.8;color:#2c2320}' +
     'pre{white-space:pre-wrap;font-family:Georgia,serif;font-size:14px;line-height:1.8}' +
-    '.header{text-align:center;margin-bottom:40px;border-bottom:2px solid #7a2f35;padding-bottom:16px}' +
+    '.hdr{text-align:center;margin-bottom:40px;border-bottom:2px solid #7a2f35;padding-bottom:16px}' +
     '.logo{font-size:22px;font-weight:bold;color:#7a2f35;font-family:Georgia,serif}' +
-    '@media print{button{display:none!important}}' +
+    '@media print{.noprint{display:none!important}}' +
     '</style></head><body>' +
-    '<div class="header"><div class="logo">Santa Maria Buffet & Eventos</div></div>' +
+    '<div class="hdr"><div class="logo">Santa Maria Buffet & Eventos</div></div>' +
     '<pre>' + texto + '</pre>' +
-    '<div style="margin-top:40px;text-align:center">' +
-    '<button onclick="window.print()" style="padding:10px 28px;background:#7a2f35;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-right:10px">Imprimir / Salvar PDF</button>' +
+    '<div class="noprint" style="margin-top:40px;text-align:center;display:flex;gap:10px;justify-content:center">' +
+    '<button onclick="window.print()" style="padding:10px 28px;background:#7a2f35;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">Imprimir / Salvar PDF</button>' +
     '<button onclick="window.close()" style="padding:10px 18px;background:#f0eeeb;color:#2c2320;border:none;border-radius:8px;font-size:14px;cursor:pointer">Fechar</button>' +
     '</div></body></html>'
   );
   win.document.close();
+  setTimeout(function() {
+    if(confirm('Salvar "' + titulo + '" no evento para enviar por assinatura?')) {
+      salvarDocGerado(evId, titulo);
+    }
+  }, 700);
 }
 
 
