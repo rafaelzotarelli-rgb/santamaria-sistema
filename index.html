@@ -1298,12 +1298,21 @@ async function findCalendarId(name) {
  
 async function loadGcalEvents() {
   const now    = new Date();
-  const start  = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
-  const end    = new Date(now.getFullYear(), now.getMonth() + 3, 1).toISOString();
+  const start  = new Date(now.getFullYear() - 1, 0, 1).toISOString();
+  const end    = new Date(now.getFullYear() + 2, 11, 31).toISOString();
   const saved  = localStorage.getItem('gcal_calendar_id');
   const calId  = saved || await findCalendarId('Eventos Buffet Santa Maria');
   const encId  = encodeURIComponent(calId);
-  const data   = await gcalFetch('https://www.googleapis.com/calendar/v3/calendars/' + encId + '/events?timeMin=' + encodeURIComponent(start) + '&timeMax=' + encodeURIComponent(end) + '&singleEvents=true&orderBy=startTime&maxResults=50');
+  let allEvents = [];
+  let pageToken = '';
+  do {
+    const url = 'https://www.googleapis.com/calendar/v3/calendars/' + encId + '/events?timeMin=' + encodeURIComponent(start) + '&timeMax=' + encodeURIComponent(end) + '&singleEvents=true&orderBy=startTime&maxResults=250' + (pageToken ? '&pageToken=' + pageToken : '');
+    const page = await gcalFetch(url);
+    if(!page || !page.items) break;
+    allEvents = allEvents.concat(page.items);
+    pageToken = page.nextPageToken || '';
+  } while(pageToken);
+  const data = { items: allEvents };
   if(!data || !data.items) return;
   const el = document.getElementById('gcal-events-list');
   if(!el) return;
