@@ -2143,7 +2143,7 @@ const MODELOS_DEFAULT = {
   recibo: {
     id: 'recibo',
     nome: 'Recibo de Pagamento',
-    conteudo: 'RECIBO DE PAGAMENTO\n\nSanta Maria Buffet & Eventos\n\nRecebi de [CLIENTE] a importancia referente ao evento [EVENTO],\nrealizado em [DATA] no local [LOCAL].\n\nValor: [VALOR]\n\nPor estar de acordo, assino o presente recibo.\n\nLocal e data: _____________, ___/___/______\n\n_________________________________\nSanta Maria Buffet'
+    conteudo: 'RECIBO DE PAGAMENTO\n\nSanta Maria Buffet & Eventos\nEmitido em: [HOJE]\n\nEVENTO: [EVENTO]\nData: [DATA]\nLocal: [LOCAL]\nConvidados: [CONVIDADOS]\nCliente: [CLIENTE]\n\n--- SERVICOS E PRODUTOS CONTRATADOS ---\n[ITENS]\n\n--- RESUMO FINANCEIRO ---\nValor total do contrato: [VALOR]\n[DESCONTO][ADICIONAL]Total recebido: [PAGO]\nSaldo em aberto: [SALDO]\n\n--- HISTORICO DE PAGAMENTOS ---\n[PAGAMENTOS]\n\nDeclaramos ter recebido os valores acima descritos.\n\nLocal e data: _____________, ___/___/______\n\n_________________________________\nSanta Maria Buffet\n\n_________________________________\n[CLIENTE] (Contratante)'
   }
 };
 
@@ -2230,6 +2230,13 @@ function gerarDocumento(evId, template, titulo, skipOffer) {
   const totalPago = pags.reduce((a,p)=>a+Number(p.valor),0);
   const valorContrato = calcValorContrato(evId);
 
+  const svcs2    = CACHE.eventoServicos ? CACHE.eventoServicos.filter(s=>s.evento_id===evId) : [];
+  const desconto2 = Number(ev.desconto||0);
+  const adicional2= Number(ev.adicional||0);
+  const itensStr  = svcs2.length ? svcs2.map(s=>'  - '+s.descricao+(s.obs?' ('+s.obs+')':'')+' ............ '+fmtMoney(s.valor)).join('\n') : '  (nenhum item cadastrado)';
+  const pagStr    = pags.length ? pags.map(p=>'  '+fmtDate(p.data)+'  '+(p.forma_pagamento||'')+'  '+fmtMoney(p.valor)+(p.descricao?' - '+p.descricao:'')).join('\n') : '  (nenhum pagamento registrado)';
+  const descStr2  = desconto2 > 0 ? 'Desconto: - ' + fmtMoney(desconto2) + '\n' : '';
+  const adicStr2  = adicional2 > 0 ? 'Adicional: + ' + fmtMoney(adicional2) + '\n' : '';
   const texto = template
     .replace(/\[CLIENTE\]/g,    cli ? cli.nome : '(cliente)')
     .replace(/\[EVENTO\]/g,     ev.nome)
@@ -2237,7 +2244,14 @@ function gerarDocumento(evId, template, titulo, skipOffer) {
     .replace(/\[LOCAL\]/g,      ev.local || '(a definir)')
     .replace(/\[CONVIDADOS\]/g, (ev.convidados||0) + ' pessoas')
     .replace(/\[VALOR\]/g,      fmtMoney(valorContrato))
-    .replace(/\[EMPRESA\]/g,    'Santa Maria Buffet');
+    .replace(/\[EMPRESA\]/g,    'Santa Maria Buffet')
+    .replace(/\[HOJE\]/g,       new Date().toLocaleDateString('pt-BR'))
+    .replace(/\[ITENS\]/g,      itensStr)
+    .replace(/\[PAGO\]/g,       fmtMoney(totalPago))
+    .replace(/\[SALDO\]/g,      fmtMoney(Math.max(0, valorContrato - totalPago)))
+    .replace(/\[DESCONTO\]/g,   descStr2)
+    .replace(/\[ADICIONAL\]/g,  adicStr2)
+    .replace(/\[PAGAMENTOS\]/g, pagStr);
 
   const win = window.open('', '_blank');
   win.document.write(
