@@ -634,6 +634,8 @@ textarea.fi{resize:vertical;min-height:64px}
 // CONFIGURAÇÃO SUPABASE
 // ══════════════════════════════════════════════════════════════════
 const SUPABASE_URL = 'https://zdfhyrqbpruxpjnvzbmr.supabase.co';
+const ZAPSIGN_TOKEN = 'b4ef5c08-b314-49d0-9f72-8159a7a11fe154147000-c334-4c7b-81bb-0706d7b83a2c';
+const ZAPSIGN_API   = 'https://api.zapsign.com.br/api/v1';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkZmh5cnFicHJ1eHBqbnZ6Ym1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0MTY3NDYsImV4cCI6MjA5MTk5Mjc0Nn0.cKVvlhiBjJWKoroGthEwsE6F69LgzE_PmhAczEVzRu4';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -1142,11 +1144,25 @@ async function verEvento(id) {
           '</div>' +
           '<div class="divider"></div>' +
           ((docs||[]).map(d=>
-            '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;background:var(--cream);border:.5px solid var(--border);margin-bottom:8px">' +
+            '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:9px;background:var(--cream);border:.5px solid var(--border);margin-bottom:8px">' +
               '<div style="width:30px;height:30px;border-radius:7px;background:var(--info-bg);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">📄</div>' +
               '<div style="flex:1"><div style="font-size:13px;font-weight:500">' + d.nome + '</div>' +
               '<div style="font-size:11px;color:var(--muted)">' + fmtDate((d.created_at||'').split('T')[0]) + '</div></div>' +
-              (d.assinado ? '<span class="badge bs">Assinado</span>' : '<span class="badge bw">Pendente</span>') +
+              (d.assinado ?
+                '<div style="display:flex;align-items:center;gap:6px">' +
+                  '<span class="badge bs">✓ Assinado</span>' +
+                  (d.zapsign_url ? '<a href="' + d.zapsign_url + '" target="_blank" class="btn bsec bsm" style="font-size:10px">📥 PDF</a>' : '') +
+                '</div>'
+              :
+                '<div style="display:flex;align-items:center;gap:6px">' +
+                  '<span class="badge bw">Pendente</span>' +
+                  (d.zapsign_token ?
+                    '<span style="font-size:10px;color:var(--muted)">Aguardando assinatura</span>'
+                  :
+                    '<button type="button" class="btn bsm" style="background:var(--info-bg);color:var(--info);border:none;font-size:10px" data-docid="' + d.id + '" data-evid2="' + id + '" onclick="enviarZapSign(this.dataset.docid,this.dataset.evid2)">✍ Enviar para assinatura</button>'
+                  ) +
+                '</div>'
+              ) +
             '</div>'
           ).join('') || '<div class="empty" style="margin-top:8px">Nenhum documento enviado</div>') +
           '<div class="uparea" data-evid2="' + id + '" onclick="simUpload(this.dataset.evid2)" style="margin-top:10px;padding:14px">' +
@@ -1157,16 +1173,22 @@ async function verEvento(id) {
           '<div class="ctitle">Assinatura digital</div>' +
           ((docs||[]).filter(d=>d.assinado).map(d=>
             '<div style="padding:10px 14px;border-radius:8px;background:var(--success-bg);color:var(--success);font-size:12px;margin-bottom:8px">' +
-              'Assinado: ' + d.nome + '<br>' +
-              '<span style="opacity:.8;font-size:11px">IP ' + (d.assinado_ip||'--') + ' · ' + (d.assinado_em ? new Date(d.assinado_em).toLocaleString('pt-BR') : '') + '</span>' +
+              '<strong>' + d.nome + '</strong> — Assinado via ZapSign' +
+              (d.assinado_em ? '<br><span style="font-size:11px;opacity:.8">' + new Date(d.assinado_em).toLocaleString('pt-BR') + '</span>' : '') +
+              (d.zapsign_url ? '<br><a href="' + d.zapsign_url + '" target="_blank" style="font-size:11px">Baixar PDF assinado</a>' : '') +
             '</div>'
           ).join('')) +
-          ((docs||[]).filter(d=>!d.assinado).length ?
-            '<div style="padding:12px 14px;border-radius:8px;background:var(--warn-bg);color:var(--warn);font-size:12px;margin-bottom:10px">' +
-              (docs||[]).filter(d=>!d.assinado).length + ' documento(s) aguardando assinatura' +
-            '</div>' +
-            '<button type="button" class="btn bgo bsm" data-evid2="' + id + '" onclick="simAssinar(this.dataset.evid2)">Simular assinatura (demo)</button>'
-          : '<div class="empty">Todos os documentos assinados</div>') +
+          ((docs||[]).filter(d=>!d.assinado&&d.zapsign_token).map(d=>
+            '<div style="padding:10px 14px;border-radius:8px;background:var(--info-bg);color:var(--info);font-size:12px;margin-bottom:8px">' +
+              '<strong>' + d.nome + '</strong> — Aguardando assinatura<br>' +
+              '<button type="button" style="font-size:11px;background:none;border:none;color:var(--info);cursor:pointer;text-decoration:underline;padding:2px 0" ' +
+                'data-docid="' + d.id + '" data-evid2="' + id + '" onclick="verificarZapSign(this.dataset.docid,this.dataset.evid2)">Verificar status</button>' +
+            '</div>'
+          ).join('')) +
+          ((docs||[]).filter(d=>!d.assinado&&!d.zapsign_token).length===0&&(docs||[]).length>0 ? '' :
+            (docs||[]).filter(d=>!d.assinado&&!d.zapsign_token).length>0 ?
+              '<div style="font-size:12px;color:var(--muted);padding:8px 0">Clique em "Enviar para assinatura" no documento para solicitar via ZapSign.</div>' :
+              (docs||[]).length===0 ? '<div class="empty">Nenhum documento enviado</div>' : '') +
         '</div>' +
       '</div>' +
     '</div>';
@@ -2015,6 +2037,13 @@ function resumoFinanceiro(evId) {
     '</body></html>'
   );
   win.document.close();
+  if(!skipOffer) {
+    setTimeout(() => {
+      if(confirm('Deseja salvar este documento no evento e enviar para assinatura via ZapSign?')) {
+        salvarDocGerado(evId, titulo);
+      }
+    }, 600);
+  }
 }
 
 // Hook salvarLanc to link evento if coming from evento detail
@@ -2194,7 +2223,7 @@ function gerarModelo(evId, modeloId) {
 
 function gerarRecibo(evId) { gerarModelo(evId, 'recibo'); }
 
-function gerarDocumento(evId, template, titulo) {
+function gerarDocumento(evId, template, titulo, skipOffer) {
   const ev  = CACHE.eventos.find(e=>e.id===evId); if(!ev) return;
   const cli = CACHE.clientes.find(c=>c.id===ev.cliente_id);
   const pags = CACHE.lancamentos.filter(l=>l.evento_id===evId&&l.tipo==='receita');
@@ -2227,6 +2256,134 @@ function gerarDocumento(evId, template, titulo) {
     '</div></body></html>'
   );
   win.document.close();
+}
+
+
+// ── ZAPSIGN INTEGRATION ───────────────────────────────────────────
+async function enviarZapSign(docId, evId) {
+  const ev  = CACHE.eventos.find(e=>e.id===evId); if(!ev) return;
+  const cli = CACHE.clientes.find(c=>c.id===ev.cliente_id);
+
+  if(!cli || !cli.email) {
+    alert('O cliente precisa ter e-mail cadastrado para receber o link de assinatura via ZapSign.');
+    return;
+  }
+
+  const { data: docsArr } = await sb.from('evento_documentos').select('*').eq('id', docId);
+  const doc = docsArr && docsArr[0]; if(!doc) return;
+
+  const btn = document.querySelector('[data-docid="' + docId + '"]');
+  if(btn) { btn.textContent = 'Enviando...'; btn.disabled = true; }
+
+  try {
+    const payload = {
+      name: doc.nome + ' - ' + ev.nome,
+      lang: 'pt-BR',
+      signers: [{
+        name:      cli.nome,
+        email:     cli.email,
+        phone_country: '55',
+        phone:     (cli.telefone||'').replace(/\D/g,''),
+        send_automatic_email: true,
+      }],
+    };
+
+    const resp = await fetch(ZAPSIGN_API + '/docs/', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + ZAPSIGN_TOKEN },
+      body: JSON.stringify(payload),
+    });
+
+    if(!resp.ok) {
+      const err = await resp.json().catch(()=>({detail:'Erro desconhecido'}));
+      throw new Error(err.detail || err.message || 'Erro ' + resp.status);
+    }
+
+    const result     = await resp.json();
+    const docToken   = result.token || '';
+    const signer     = result.signers && result.signers[0];
+    const signToken  = signer ? (signer.token || '') : '';
+    const signLink   = signer ? (signer.sign_url || '') : '';
+
+    // Save ZapSign data to Supabase
+    await sb.from('evento_documentos').update({
+      zapsign_token:        docToken,
+      zapsign_signer_token: signToken,
+      zapsign_link:         signLink,
+    }).eq('id', docId);
+
+    // Send via WhatsApp if phone available
+    const tel = (cli.telefone||'').replace(/\D/g,'');
+    if(tel && signLink) {
+      const msg = encodeURIComponent(
+        'Ola ' + cli.nome.split(' ')[0] + '! Segue o link para assinar o documento "' +
+        doc.nome + '" referente ao seu evento com o Santa Maria Buffet: ' + signLink
+      );
+      window.open('https://wa.me/55' + tel + '?text=' + msg, '_blank');
+    }
+
+    await loadAll();
+    verEvento(evId);
+    alert('Documento enviado via ZapSign! ' + cli.nome + ' recebera o link por e-mail' + (tel?' e WhatsApp':'') + '.');
+
+  } catch(err) {
+    alert('Erro ao enviar para ZapSign:\n' + err.message);
+    if(btn) { btn.textContent = 'Enviar para assinatura'; btn.disabled = false; }
+  }
+}
+
+async function verificarZapSign(docId, evId) {
+  const { data: docsArr } = await sb.from('evento_documentos').select('*').eq('id', docId);
+  const doc = docsArr && docsArr[0];
+  if(!doc || !doc.zapsign_token) { alert('Documento sem token ZapSign.'); return; }
+
+  try {
+    const resp = await fetch(ZAPSIGN_API + '/docs/' + doc.zapsign_token + '/', {
+      headers: { 'Authorization': 'Bearer ' + ZAPSIGN_TOKEN },
+    });
+    if(!resp.ok) throw new Error('Erro ao consultar ZapSign (' + resp.status + ')');
+
+    const result  = await resp.json();
+    const signed  = result.status === 'signed';
+    const pdfUrl  = result.signed_file || result.pdf_file || null;
+
+    if(signed) {
+      await sb.from('evento_documentos').update({
+        assinado:    true,
+        assinado_em: new Date().toISOString(),
+        zapsign_url: pdfUrl,
+      }).eq('id', docId);
+      await loadAll();
+      verEvento(evId);
+      alert('Documento assinado com sucesso! PDF disponivel para download.');
+    } else {
+      const signer = result.signers && result.signers[0];
+      const st     = signer ? signer.status : result.status;
+      alert('Status: ' + (st||'aguardando') + '. O signatario ainda nao assinou.');
+    }
+  } catch(err) {
+    alert('Erro ao verificar status: ' + err.message);
+  }
+}
+
+async function salvarDocGerado(evId, nome) {
+  const { data, error } = await sb.from('evento_documentos').insert({
+    evento_id: evId,
+    nome:      nome + ' — ' + fmtDate(today()),
+    tamanho:   '--',
+    assinado:  false,
+  }).select();
+  if(error) { console.error('Erro ao salvar doc:', error.message); return; }
+  await loadAll();
+  const docId = data && data[0] && data[0].id;
+  verEvento(evId);
+  if(docId) {
+    setTimeout(() => {
+      if(confirm('Deseja enviar "' + nome + '" para assinatura via ZapSign agora?')) {
+        enviarZapSign(docId, evId);
+      }
+    }, 400);
+  }
 }
 
 initAuth();
