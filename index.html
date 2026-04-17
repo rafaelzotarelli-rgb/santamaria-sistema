@@ -1154,7 +1154,10 @@ async function verEvento(id) {
               '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
               (d.assinado ?
                 '<span class="badge bs">✓ Assinado</span>' +
-                (d.zapsign_url ? '<a href="' + d.zapsign_url + '" target="_blank" class="btn bsec bsm" style="font-size:10px">📥 PDF</a>' : '')
+                (d.zapsign_url ?
+                  '<a href="' + d.zapsign_url + '" target="_blank" class="btn bsm" style="background:var(--success-bg);color:var(--success);border:.5px solid var(--success);font-size:10px">📥 Baixar PDF assinado</a>'
+                : '<button type="button" class="btn bsm" style="background:var(--warn-bg);color:var(--warn);border:none;font-size:10px" data-docid="' + d.id + '" data-evid2="' + id + '" onclick="verificarZapSign(this.dataset.docid,this.dataset.evid2,false)">Buscar PDF</button>') +
+                '<button type="button" class="btn bsm" style="background:var(--danger-bg);color:var(--danger);border:none;font-size:10px" data-docid="' + d.id + '" data-evid2="' + id + '" onclick="excluirDocumento(this.dataset.docid,this.dataset.evid2)">✕</button>'
               :
                 '<span class="badge bw">Pendente</span>' +
                 (d.zapsign_token ?
@@ -2586,6 +2589,19 @@ async function verificarZapSignAuto(docs, evId) {
   }
 }
 
+// Recarrega evento e ativa aba docs com dados frescos do banco
+async function abrirEventoAbaDoc(evId) {
+  await verEvento(evId);
+  // Pequena espera para garantir que o DOM foi montado
+  await new Promise(function(r){ setTimeout(r, 100); });
+  document.querySelectorAll('#ev-dtabs .tab').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('[id^="ev-tab-"]').forEach(function(t){ t.classList.remove('active'); });
+  var dt = document.querySelector('#ev-dtabs .tab[data-ev-tab="docs"]');
+  var dc = document.getElementById('ev-tab-docs');
+  if(dt) dt.classList.add('active');
+  if(dc) dc.classList.add('active');
+}
+
 async function salvarDocGerado(evId, nome) {
   const { data, error } = await sb.from('evento_documentos').insert({
     evento_id: evId,
@@ -2595,19 +2611,9 @@ async function salvarDocGerado(evId, nome) {
   }).select();
   if(error) { console.error('Erro ao salvar doc:', error.message); return; }
   const docId = data && data[0] && data[0].id;
-  // Aguarda verEvento terminar (ele busca os docs internamente)
-  await verEvento(evId);
-  // Agora ativa a aba docs — dados já estão na tela
-  document.querySelectorAll('#ev-dtabs .tab').forEach(function(b){ b.classList.remove('active'); });
-  document.querySelectorAll('[id^="ev-tab-"]').forEach(function(t){ t.classList.remove('active'); });
-  var docsTab = document.querySelector('#ev-dtabs .tab[data-ev-tab="docs"]');
-  var docsContent = document.getElementById('ev-tab-docs');
-  if(docsTab) docsTab.classList.add('active');
-  if(docsContent) docsContent.classList.add('active');
-  if(docId) {
-    if(confirm('Deseja enviar "' + nome + '" para assinatura via ZapSign agora?')) {
-      enviarZapSign(docId, evId);
-    }
+  await abrirEventoAbaDoc(evId);
+  if(docId && confirm('Deseja enviar "' + nome + '" para assinatura via ZapSign agora?')) {
+    enviarZapSign(docId, evId);
   }
 }
 
@@ -2631,23 +2637,13 @@ async function salvarDocGeradoPdf(evId, nome, pdfBase64) {
   }).select();
   if(error) { alert('Erro ao salvar: ' + error.message); return; }
   const docId = data && data[0] && data[0].id;
-  // Salva o base64 do PDF no localStorage temporariamente para usar no envio
   if(pdfBase64 && docId) {
     localStorage.setItem('pdf_b64_' + docId, pdfBase64);
   }
-  await verEvento(evId);
-  // Ativa aba docs
-  setTimeout(function() {
-    document.querySelectorAll('#ev-dtabs .tab').forEach(function(b){ b.classList.remove('active'); });
-    document.querySelectorAll('[id^="ev-tab-"]').forEach(function(t){ t.classList.remove('active'); });
-    var dt = document.querySelector('#ev-dtabs .tab[data-ev-tab="docs"]');
-    var dc = document.getElementById('ev-tab-docs');
-    if(dt) dt.classList.add('active');
-    if(dc) dc.classList.add('active');
-    if(docId && confirm('Deseja enviar "' + nome + '" para assinatura via ZapSign agora?')) {
+  await abrirEventoAbaDoc(evId);
+  if(docId && confirm('Deseja enviar "' + nome + '" para assinatura via ZapSign agora?')) {
       enviarZapSign(docId, evId);
     }
-  }, 300);
 }
 
 initAuth();
