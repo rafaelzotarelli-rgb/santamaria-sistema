@@ -2326,15 +2326,15 @@ async function enviarZapSign(docId, evId) {
       }],
     };
 
-    const resp = await fetch(ZAPSIGN_API + '/docs/', {
+    const resp = await fetch('/api/zapsign?action=criar', {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + ZAPSIGN_TOKEN },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
 
     if(!resp.ok) {
-      const err = await resp.json().catch(()=>({detail:'Erro desconhecido'}));
-      throw new Error(err.detail || err.message || 'Erro ' + resp.status);
+      const err = await resp.json().catch(()=>({error:'Erro desconhecido'}));
+      throw new Error(err.error || err.detail || 'Erro ' + resp.status);
     }
 
     const result     = await resp.json();
@@ -2376,9 +2376,7 @@ async function verificarZapSign(docId, evId) {
   if(!doc || !doc.zapsign_token) { alert('Documento sem token ZapSign.'); return; }
 
   try {
-    const resp = await fetch(ZAPSIGN_API + '/docs/' + doc.zapsign_token + '/', {
-      headers: { 'Authorization': 'Bearer ' + ZAPSIGN_TOKEN },
-    });
+    const resp = await fetch('/api/zapsign?action=status&token=' + doc.zapsign_token);
     if(!resp.ok) throw new Error('Erro ao consultar ZapSign (' + resp.status + ')');
 
     const result  = await resp.json();
