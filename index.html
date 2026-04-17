@@ -545,7 +545,8 @@ textarea.fi{resize:vertical;min-height:64px}
 // CONFIGURAÇÃO SUPABASE
 // ══════════════════════════════════════════════════════════════════
 const SUPABASE_URL = 'https://zdfhyrqbpruxpjnvzbmr.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkZmh5cnFicHJ1eHBqbnZ6Ym1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0MTY3NDYsImV4cCI6MjA5MTk5Mjc0Nn0.cKVvlhiBjJWKoroGthEwsE6F69LgzE_PmhAczEVzRu4';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkZmh5cnFicHJ1eHBqbnZ6Ym1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0MTY3NDYsImV4cCI6MjA5MTk5Mjc0Nn0.cKVvlhiBjJWKoroGthEwsE6F69LgzE_PmhAczEVzRu4
+  ';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── HELPERS ──────────────────────────────────────────────────────
@@ -661,7 +662,17 @@ function renderPage(p) {
   const pg = document.getElementById('page-'+p);
   if(pg) pg.classList.add('active');
   if(p==='dashboard')   renderDashboard();
-  if(p==='agenda')      renderCalendar();
+  if(p==='agenda') {
+    renderCalendar();
+    setTimeout(function() {
+      const saved = localStorage.getItem('gcal_embed_id') || GCAL_DEFAULT_ID;
+      const setupCard = document.getElementById('gcal-setup-card');
+      const iframeWrap = document.getElementById('gcal-iframe-wrap');
+      if(setupCard) setupCard.style.display = 'none';
+      if(iframeWrap) iframeWrap.style.display = 'block';
+      renderIframe(saved);
+    }, 50);
+  }
   if(p==='eventos')     renderEventos();
   if(p==='orcamentos')  renderOrcamentos();
   if(p==='clientes')    renderClientes();
@@ -1444,17 +1455,7 @@ function updateIframe() {
 }
 
 // Auto-load agenda iframe — always show default calendar
-const _origRenderPage = renderPage;
-function renderPage(p) {
-  _origRenderPage(p);
-  if(p === 'agenda') {
-    const saved = localStorage.getItem('gcal_embed_id') || GCAL_DEFAULT_ID;
-    document.getElementById('gcal-setup-card').style.display = 'none';
-    document.getElementById('gcal-iframe-wrap').style.display = 'block';
-    if(document.getElementById('gcal-embed-url')) document.getElementById('gcal-embed-url').value = saved;
-    renderIframe(saved);
-  }
-}
+
 
 window.addEventListener('load', function() {
   const saved = localStorage.getItem('gcal_token');
