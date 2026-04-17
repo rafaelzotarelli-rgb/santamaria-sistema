@@ -470,7 +470,28 @@ textarea.fi{resize:vertical;min-height:64px}
   <div class="fgrid2"><div class="fg"><label class="fl">Nome do evento *</label><input class="fi" id="ev-nome" placeholder="Casamento Silva & Costa"></div><div class="fg"><label class="fl">Tipo</label><select class="fi" id="ev-tipo"><option>Casamento</option><option>Bodas</option><option>Aniversário</option><option>Corporativo</option><option>Outro</option></select></div></div>
   <div class="fgrid3"><div class="fg"><label class="fl">Data *</label><input class="fi" type="date" id="ev-data"></div><div class="fg"><label class="fl">Horário</label><input class="fi" type="time" id="ev-hora" value="19:00"></div><div class="fg"><label class="fl">Convidados</label><input class="fi" type="number" id="ev-conv" placeholder="150" min="0"></div></div>
   <div class="fgrid2"><div class="fg"><label class="fl">Local / Espaço</label><input class="fi" id="ev-local" placeholder="Nome do salão"></div><div class="fg fin-only"><label class="fl">Valor total (R$)</label><input class="fi" type="number" id="ev-valor" placeholder="0" step="0.01" min="0"></div></div>
-  <div class="fg"><label class="fl">Cliente</label><select class="fi" id="ev-cliente"><option value="">Selecione o cliente...</option></select></div>
+  <div class="fg">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <label class="fl">Cliente</label>
+      <button type="button" class="btn bsec bsm" id="btn-novo-cli-inline" onclick="toggleNovoClienteInline()" style="font-size:10px;padding:3px 9px">+ Novo cliente</button>
+    </div>
+    <select class="fi" id="ev-cliente"><option value="">Selecione o cliente...</option></select>
+    <div id="novo-cli-inline" style="display:none;margin-top:10px;background:var(--cream);border-radius:10px;padding:14px;border:.5px solid var(--border)">
+      <div style="font-size:11px;font-weight:500;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">Novo cliente</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="fg" style="margin:0"><label class="fl">Nome *</label><input class="fi" id="ev-cli-nome" placeholder="Nome completo"></div>
+        <div class="fg" style="margin:0"><label class="fl">Telefone *</label><input class="fi" id="ev-cli-tel" placeholder="(11) 99999-9999"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="fg" style="margin:0"><label class="fl">E-mail</label><input class="fi" id="ev-cli-email" type="email" placeholder="email@exemplo.com"></div>
+        <div class="fg" style="margin:0"><label class="fl">CPF / CNPJ</label><input class="fi" id="ev-cli-doc" placeholder="000.000.000-00"></div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" class="btn bsec bsm" onclick="toggleNovoClienteInline()">Cancelar</button>
+        <button type="button" class="btn bp bsm" onclick="salvarClienteInline()">Salvar e selecionar</button>
+      </div>
+    </div>
+  </div>
   <div class="fg"><label class="fl">Observações</label><textarea class="fi" id="ev-obs" placeholder="Detalhes especiais..."></textarea></div>
   <div class="mfoot"><button class="btn bsec" onclick="closeModal('novoEvento')">Cancelar</button><button class="btn bp" onclick="salvarEvento()">Salvar Evento</button></div>
 </div></div>
@@ -901,18 +922,84 @@ async function addSvcModal(evId) {
 }
 
 // ── SALVAR EVENTO ─────────────────────────────────────────────────
+
+// ── CLIENTE INLINE NO FORM DE EVENTO ─────────────────────────────
+function toggleNovoClienteInline() {
+  const el = document.getElementById('novo-cli-inline');
+  const btn = document.getElementById('btn-novo-cli-inline');
+  const open = el.style.display === 'none';
+  el.style.display = open ? 'block' : 'none';
+  btn.textContent = open ? '✕ Fechar' : '+ Novo cliente';
+  if(open) {
+    document.getElementById('ev-cli-nome').value = '';
+    document.getElementById('ev-cli-tel').value = '';
+    document.getElementById('ev-cli-email').value = '';
+    document.getElementById('ev-cli-doc').value = '';
+    setTimeout(() => document.getElementById('ev-cli-nome').focus(), 50);
+  }
+}
+
+async function salvarClienteInline() {
+  const nome = document.getElementById('ev-cli-nome').value.trim();
+  const tel  = document.getElementById('ev-cli-tel').value.trim();
+  if(!nome) { alert('Informe o nome do cliente.'); return; }
+  const btn = document.querySelector('#novo-cli-inline .btn.bp');
+  if(btn) { btn.textContent = 'Salvando...'; btn.disabled = true; }
+  try {
+    const { data, error } = await sb.from('clientes').insert({
+      nome,
+      telefone: tel,
+      email: document.getElementById('ev-cli-email').value.trim() || null,
+      cpf_cnpj: document.getElementById('ev-cli-doc').value.trim() || null,
+    }).select().single();
+    if(error) { alert('Erro ao salvar cliente: ' + error.message); return; }
+    await loadAll();
+    loadClientesSelect();
+    document.getElementById('ev-cliente').value = data.id;
+    toggleNovoClienteInline();
+  } catch(err) {
+    alert('Erro inesperado: ' + err.message);
+  } finally {
+    if(btn) { btn.textContent = 'Salvar e selecionar'; btn.disabled = false; }
+  }
+}
+
 async function salvarEvento() {
-  const nome=document.getElementById('ev-nome').value.trim();
-  const data=document.getElementById('ev-data').value;
-  if(!nome||!data){alert('Preencha o nome e a data do evento.');return;}
-  const obj={nome,tipo:document.getElementById('ev-tipo').value,data,horario:document.getElementById('ev-hora').value,local:document.getElementById('ev-local').value,convidados:Number(document.getElementById('ev-conv').value)||0,valor:parseFloat(document.getElementById('ev-valor').value)||0,obs:document.getElementById('ev-obs').value,status:'confirmado',cliente_id:document.getElementById('ev-cliente').value||null};
-  const {error}=await sb.from('eventos').insert(obj);
-  if(error){alert('Erro ao salvar: '+error.message);return;}
-  closeModal('novoEvento');
-  await loadAll();
-  if(gcalConnected) addEventoToGcal({nome,data:document.getElementById('ev-data').value,horario:document.getElementById('ev-hora').value,local:document.getElementById('ev-local').value,tipo:document.getElementById('ev-tipo').value,convidados:Number(document.getElementById('ev-conv').value)||0});
-  renderEventos();
-  updateFuBadge();
+  const nome = document.getElementById('ev-nome').value.trim();
+  const data = document.getElementById('ev-data').value;
+  if(!nome || !data) { alert('Preencha o nome e a data do evento.'); return; }
+  const horaRaw = document.getElementById('ev-hora').value || '';
+  const horario = horaRaw ? (horaRaw.length === 5 ? horaRaw + ':00' : horaRaw) : null;
+  const clienteId = document.getElementById('ev-cliente').value || null;
+  const obj = {
+    nome,
+    tipo: document.getElementById('ev-tipo').value,
+    data,
+    horario,
+    local: document.getElementById('ev-local').value || null,
+    convidados: Number(document.getElementById('ev-conv').value) || 0,
+    valor: parseFloat(document.getElementById('ev-valor').value) || 0,
+    obs: document.getElementById('ev-obs').value || null,
+    status: 'confirmado',
+    cliente_id: clienteId,
+  };
+  try {
+    const { data: inserted, error } = await sb.from('eventos').insert(obj).select();
+    if(error) { alert('Erro ao salvar evento:
+' + error.message); return; }
+    closeModal('novoEvento');
+    ['ev-nome','ev-local','ev-obs'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('ev-conv').value = '';
+    document.getElementById('ev-valor').value = '';
+    await loadAll();
+    if(gcalConnected) addEventoToGcal({ nome, data, horario: horaRaw, local: obj.local || '', tipo: obj.tipo, convidados: obj.convidados });
+    renderEventos();
+    renderDashboard();
+    renderCalendar();
+    updateFuBadge();
+  } catch(err) {
+    alert('Erro inesperado: ' + err.message);
+  }
 }
 
 // ── CLIENTES ──────────────────────────────────────────────────────
