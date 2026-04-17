@@ -347,6 +347,33 @@ textarea.fi{resize:vertical;min-height:64px}
           <div><div class="ptitle">Eventos</div><div class="psub">Todos os seus eventos e casamentos.</div></div>
           <button class="btn bp" onclick="openModal('novoEvento')">+ Novo Evento</button>
         </div>
+        <div class="card" style="margin-bottom:12px">
+          <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+            <div class="fg" style="margin:0;flex:2;min-width:160px">
+              <label class="fl">Buscar por nome</label>
+              <input class="fi" id="ev-busca" placeholder="Nome do evento..." oninput="renderEventos()">
+            </div>
+            <div class="fg" style="margin:0">
+              <label class="fl">Mês</label>
+              <select class="fi" id="ev-filtro-mes" onchange="renderEventos()" style="width:120px">
+                <option value="">Todos</option>
+                <option>Janeiro</option><option>Fevereiro</option><option>Março</option>
+                <option>Abril</option><option>Maio</option><option>Junho</option>
+                <option>Julho</option><option>Agosto</option><option>Setembro</option>
+                <option>Outubro</option><option>Novembro</option><option>Dezembro</option>
+              </select>
+            </div>
+            <div class="fg" style="margin:0">
+              <label class="fl">De</label>
+              <input class="fi" type="date" id="ev-filtro-de" onchange="renderEventos()" style="width:136px">
+            </div>
+            <div class="fg" style="margin:0">
+              <label class="fl">Até</label>
+              <input class="fi" type="date" id="ev-filtro-ate" onchange="renderEventos()" style="width:136px">
+            </div>
+            <button type="button" class="btn bsec" onclick="limparFiltrosEv()" style="margin-bottom:1px">✕ Limpar</button>
+          </div>
+        </div>
         <div class="card" style="padding:0">
           <div class="table-wrap">
             <table><thead><tr>
@@ -468,6 +495,43 @@ textarea.fi{resize:vertical;min-height:64px}
 </div>
 
 <!-- ── MODAIS ── -->
+<div class="moverlay" id="modal-addSvcEvento"><div class="modal modal-sm">
+  <div class="mtitle">Adicionar item ao evento<button class="mclose" onclick="closeModal('addSvcEvento')">✕</button></div>
+  <div class="fg">
+    <label class="fl">Produto / Serviço do catálogo</label>
+    <select class="fi" id="asvc-prod" onchange="preencherSvcEvento()">
+      <option value="">-- Selecione do catálogo --</option>
+    </select>
+  </div>
+  <div class="fg">
+    <label class="fl">Ou digite manualmente</label>
+    <input class="fi" id="asvc-desc" placeholder="Descrição do item">
+  </div>
+  <div class="fgrid3">
+    <div class="fg"><label class="fl">Quantidade</label><input class="fi" type="number" id="asvc-qtd" value="1" min="1" step="1" oninput="calcSvcTotal()"></div>
+    <div class="fg"><label class="fl">Valor unitário (R$)</label><input class="fi" type="number" id="asvc-val" placeholder="0" step="0.01" oninput="calcSvcTotal()"></div>
+    <div class="fg"><label class="fl">Total</label><input class="fi" id="asvc-total" readonly style="background:var(--success-bg);color:var(--success);font-weight:500"></div>
+  </div>
+  <div class="fg"><label class="fl">Observação</label><input class="fi" id="asvc-obs" placeholder="Ex: inclui montagem, 180 pessoas..."></div>
+  <div class="mfoot">
+    <button type="button" class="btn bsec" onclick="closeModal('addSvcEvento')">Cancelar</button>
+    <button type="button" class="btn bp" onclick="confirmarAddSvc()">Adicionar</button>
+  </div>
+</div></div>
+
+<div class="moverlay" id="modal-editModelo"><div class="modal">
+  <div class="mtitle" id="edit-modelo-title">Editar modelo<button class="mclose" onclick="closeModal('editModelo')">✕</button></div>
+  <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Edite o conteúdo do modelo. Use as variáveis entre colchetes — elas serão substituídas pelos dados do evento ao gerar o documento.</div>
+  <div style="background:var(--info-bg);border-radius:9px;padding:10px 14px;font-size:12px;color:var(--info);margin-bottom:14px">
+    Variáveis disponíveis: <strong>[CLIENTE]</strong> [EVENTO] [DATA] [LOCAL] [CONVIDADOS] [VALOR] [EMPRESA]
+  </div>
+  <div class="fg"><label class="fl">Nome do modelo</label><input class="fi" id="em-nome" placeholder="Ex: Contrato padrão 2025"></div>
+  <div class="fg"><label class="fl">Conteúdo do modelo</label><textarea class="fi" id="em-conteudo" rows="16" style="font-family:monospace;font-size:12px" placeholder="Digite ou cole aqui o texto do seu contrato/recibo..."></textarea></div>
+  <div class="mfoot">
+    <button type="button" class="btn bsec" onclick="closeModal('editModelo')">Cancelar</button>
+    <button type="button" class="btn bp" onclick="salvarModelo()">Salvar modelo</button>
+  </div>
+</div></div>
 <div class="moverlay" id="modal-novoEvento"><div class="modal" style="max-height:90vh;overflow-y:auto">
   <div class="mtitle">Novo Evento<button class="mclose" onclick="closeModal('novoEvento')">✕</button></div>
   <div class="fgrid2"><div class="fg"><label class="fl">Nome do evento *</label><input class="fi" id="ev-nome" placeholder="Casamento Silva & Costa"></div><div class="fg"><label class="fl">Tipo</label><select class="fi" id="ev-tipo"><option>Casamento</option><option>Bodas</option><option>Aniversário</option><option>Corporativo</option><option>Outro</option></select></div></div>
@@ -1058,7 +1122,10 @@ async function verEvento(id) {
           '<div style="margin-bottom:12px">' +
             '<div style="font-size:11px;font-weight:500;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Modelos disponiveis</div>' +
             '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
-              '<button type="button" class="btn bsec bsm" data-evid2="' + id + '" onclick="gerarContrato(this.dataset.evid2)">📄 Contrato PDF</button>' +
+              '<button type="button" class="btn bsec bsm" data-evid2="' + id + '" onclick="gerarContrato(this.dataset.evid2)">📄 Gerar contrato</button>' +
+            '<button type="button" class="btn bsec bsm" data-evid2="' + id + '" onclick="gerarRecibo(this.dataset.evid2)">🧾 Gerar recibo</button>' +
+            '<button type="button" class="btn bsec bsm" onclick="abrirEditarModelo(\'contrato\')">✏ Editar contrato</button>' +
+            '<button type="button" class="btn bsec bsm" onclick="abrirEditarModelo(\'recibo\')">✏ Editar recibo</button>' +
               '<button type="button" class="btn bsec bsm" data-evid2="' + id + '" onclick="gerarRecibo(this.dataset.evid2)">🧾 Recibo</button>' +
             '</div>' +
           '</div>' +
@@ -1777,21 +1844,55 @@ async function salvarDescontoAdicional(evId) {
   alert('Desconto/adicional salvo!');
 }
 
-async function addSvcEvento(evId) {
-  const prods = CACHE.produtos;
-  let desc = '', cat = '', val = 0;
-  if(prods.length) {
-    const nomes = prods.map((p,i) => (i+1) + '-' + p.nome).join(', ');
-    const escolha = prompt('Numero do item (' + nomes + ') ou vazio para digitar:');
-    if(escolha && !isNaN(parseInt(escolha))) {
-      const p = prods[parseInt(escolha)-1];
-      if(p) { desc = p.nome; cat = p.categoria; val = p.preco; }
-    }
-  }
-  if(!desc) { desc = prompt('Descricao:'); if(!desc) return; }
-  if(!val)  { val = parseFloat(prompt('Valor (R$):')||'0'); }
-  const { error } = await sb.from('evento_servicos').insert({ evento_id: evId, descricao: desc, categoria: cat||'', valor: val });
+function addSvcEvento(evId) {
+  window._addSvcEvId = evId;
+  // Populate catalog select
+  const sel = document.getElementById('asvc-prod');
+  sel.innerHTML = '<option value="">-- Selecione do catalogo --</option>' +
+    CACHE.produtos.map(p => '<option value="' + p.id + '" data-preco="' + p.preco + '" data-cat="' + (p.categoria||'') + '" data-nome="' + p.nome.replace(/"/g,"&quot;") + '">' + p.nome + ' — R$' + Number(p.preco).toFixed(0) + '/pessoa</option>').join('');
+  // Reset fields
+  document.getElementById('asvc-desc').value = '';
+  document.getElementById('asvc-qtd').value  = '1';
+  document.getElementById('asvc-val').value  = '';
+  document.getElementById('asvc-total').value = '';
+  document.getElementById('asvc-obs').value  = '';
+  openModal('addSvcEvento');
+}
+
+function preencherSvcEvento() {
+  const sel = document.getElementById('asvc-prod');
+  const opt = sel.options[sel.selectedIndex];
+  if(!opt || !opt.value) return;
+  document.getElementById('asvc-desc').value = opt.dataset.nome || '';
+  document.getElementById('asvc-val').value  = opt.dataset.preco || '';
+  calcSvcTotal();
+}
+
+function calcSvcTotal() {
+  const qtd = parseFloat(document.getElementById('asvc-qtd').value)||1;
+  const val = parseFloat(document.getElementById('asvc-val').value)||0;
+  document.getElementById('asvc-total').value = 'R$ ' + (qtd * val).toLocaleString('pt-BR', {minimumFractionDigits:2});
+}
+
+async function confirmarAddSvc() {
+  const evId = window._addSvcEvId; if(!evId) return;
+  const desc = document.getElementById('asvc-desc').value.trim();
+  const qtd  = parseFloat(document.getElementById('asvc-qtd').value)||1;
+  const val  = parseFloat(document.getElementById('asvc-val').value)||0;
+  const obs  = document.getElementById('asvc-obs').value.trim();
+  const sel  = document.getElementById('asvc-prod');
+  const opt  = sel.options[sel.selectedIndex];
+  const cat  = opt && opt.value ? (opt.dataset.cat||'') : '';
+  if(!desc) { alert('Informe a descricao do item.'); return; }
+  if(!val)  { alert('Informe o valor do item.'); return; }
+  const totalVal = qtd * val;
+  const descFinal = qtd > 1 ? desc + ' (x' + qtd + ')' : desc;
+  const obsFinal  = obs || null;
+  const { error } = await sb.from('evento_servicos').insert({
+    evento_id: evId, descricao: descFinal, categoria: cat, valor: totalVal, obs: obsFinal
+  });
   if(error) { alert('Erro: ' + error.message); return; }
+  closeModal('addSvcEvento');
   await loadAll();
   verEvento(evId);
 }
@@ -2000,6 +2101,146 @@ function gerarContrato(evId) {
 }
 function gerarRecibo(evId) {
   resumoFinanceiro(evId);
+}
+
+
+// ── MODELOS DE CONTRATO ───────────────────────────────────────────
+const MODELOS_DEFAULT = {
+  contrato: {
+    nome: 'Contrato Padrao',
+    conteudo: `CONTRATO DE PRESTACAO DE SERVICOS DE BUFFET
+
+Santa Maria Buffet & Eventos
+CNPJ: XX.XXX.XXX/XXXX-XX
+
+CONTRATANTE: [CLIENTE]
+EVENTO: [EVENTO]
+DATA DO EVENTO: [DATA]
+LOCAL: [LOCAL]
+NUMERO DE CONVIDADOS: [CONVIDADOS]
+VALOR TOTAL DO CONTRATO: [VALOR]
+
+CLAUSULAS:
+
+1. OBJETO
+O presente contrato tem por objeto a prestacao de servicos de buffet e eventos conforme descrito acima.
+
+2. VALOR E PAGAMENTO
+O valor total dos servicos e de [VALOR], a ser pago conforme cronograma acordado entre as partes.
+
+3. OBRIGACOES DA CONTRATADA
+A Santa Maria Buffet se compromete a prestar os servicos com qualidade e pontualidade na data acordada.
+
+4. CANCELAMENTO
+Em caso de cancelamento com menos de 30 dias de antecedencia, o sinal pago nao sera devolvido.
+
+5. FORO
+Fica eleito o foro da Comarca local para dirimir eventuais duvidas.
+
+Local e data: _____________, ___/___/______
+
+_________________________________
+Santa Maria Buffet (Contratada)
+
+_________________________________
+[CLIENTE] (Contratante)`
+  },
+  recibo: {
+    nome: 'Recibo de Pagamento',
+    conteudo: `RECIBO DE PAGAMENTO
+
+Santa Maria Buffet & Eventos
+
+Recebi de [CLIENTE] a importancia referente ao evento [EVENTO],
+realizado em [DATA] no local [LOCAL].
+
+Valor: [VALOR]
+
+Por estar de acordo, assino o presente recibo.
+
+Local e data: _____________, ___/___/______
+
+_________________________________
+Santa Maria Buffet`
+  }
+};
+
+function getModelos() {
+  try {
+    const saved = localStorage.getItem('sm_modelos');
+    return saved ? JSON.parse(saved) : Object.assign({}, MODELOS_DEFAULT);
+  } catch(e) { return Object.assign({}, MODELOS_DEFAULT); }
+}
+
+function saveModelos(modelos) {
+  localStorage.setItem('sm_modelos', JSON.stringify(modelos));
+}
+
+function abrirEditarModelo(tipo) {
+  const modelos = getModelos();
+  const m = modelos[tipo] || MODELOS_DEFAULT[tipo];
+  document.getElementById('em-nome').value     = m.nome || '';
+  document.getElementById('em-conteudo').value = m.conteudo || '';
+  document.getElementById('edit-modelo-title').childNodes[0].textContent = tipo === 'contrato' ? 'Editar contrato padrao' : 'Editar recibo padrao';
+  window._editModeloTipo = tipo;
+  openModal('editModelo');
+}
+
+function salvarModelo() {
+  const tipo = window._editModeloTipo; if(!tipo) return;
+  const modelos = getModelos();
+  modelos[tipo] = {
+    nome:     document.getElementById('em-nome').value.trim(),
+    conteudo: document.getElementById('em-conteudo').value,
+  };
+  saveModelos(modelos);
+  closeModal('editModelo');
+  alert('Modelo salvo!');
+}
+
+function gerarContrato(evId) {
+  const modelos = getModelos();
+  gerarDocumento(evId, modelos.contrato.conteudo, modelos.contrato.nome);
+}
+
+function gerarRecibo(evId) {
+  const modelos = getModelos();
+  gerarDocumento(evId, modelos.recibo.conteudo, modelos.recibo.nome);
+}
+
+function gerarDocumento(evId, template, titulo) {
+  const ev  = CACHE.eventos.find(e=>e.id===evId); if(!ev) return;
+  const cli = CACHE.clientes.find(c=>c.id===ev.cliente_id);
+  const pags = CACHE.lancamentos.filter(l=>l.evento_id===evId&&l.tipo==='receita');
+  const totalPago = pags.reduce((a,p)=>a+Number(p.valor),0);
+
+  const texto = template
+    .replace(/\[CLIENTE\]/g,    cli ? cli.nome : '(cliente)')
+    .replace(/\[EVENTO\]/g,     ev.nome)
+    .replace(/\[DATA\]/g,       fmtDate(ev.data))
+    .replace(/\[LOCAL\]/g,      ev.local || '(a definir)')
+    .replace(/\[CONVIDADOS\]/g, (ev.convidados||0) + ' pessoas')
+    .replace(/\[VALOR\]/g,      fmtMoney(ev.valor))
+    .replace(/\[EMPRESA\]/g,    'Santa Maria Buffet');
+
+  const win = window.open('', '_blank');
+  win.document.write(
+    '<html><head><title>' + titulo + ' - ' + ev.nome + '</title>' +
+    '<style>body{font-family:Georgia,serif;max-width:720px;margin:48px auto;font-size:14px;line-height:1.8;color:#2c2320}' +
+    'pre{white-space:pre-wrap;font-family:Georgia,serif;font-size:14px;line-height:1.8}' +
+    'h2{font-size:18px;margin-bottom:4px;color:#7a2f35}' +
+    '.header{text-align:center;margin-bottom:40px;border-bottom:2px solid #7a2f35;padding-bottom:16px}' +
+    '.logo{font-size:22px;font-weight:bold;color:#7a2f35;font-family:Georgia,serif}' +
+    '@media print{button{display:none!important}}' +
+    '</style></head><body>' +
+    '<div class="header"><div class="logo">Santa Maria Buffet & Eventos</div></div>' +
+    '<pre>' + texto + '</pre>' +
+    '<div style="margin-top:40px;text-align:center">' +
+    '<button onclick="window.print()" style="padding:10px 28px;background:#7a2f35;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-right:10px">Imprimir / Salvar PDF</button>' +
+    '<button onclick="window.close()" style="padding:10px 18px;background:#f0eeeb;color:#2c2320;border:none;border-radius:8px;font-size:14px;cursor:pointer">Fechar</button>' +
+    '</div></body></html>'
+  );
+  win.document.close();
 }
 
 initAuth();
