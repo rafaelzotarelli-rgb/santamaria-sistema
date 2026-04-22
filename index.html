@@ -557,8 +557,8 @@ textarea.fi{resize:vertical;min-height:64px}
         <div class="fg" style="margin:0"><label class="fl">CPF / CNPJ</label><input class="fi" id="ev-cli-doc" placeholder="000.000.000-00"></div>
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end">
-        <button type="button" class="btn bsec bsm" onclick="toggleNovoClienteInline()">Cancelar</button>
-        <button type="button" class="btn bp bsm" onclick="salvarClienteInline()">Salvar e selecionar</button>
+        <button type="button" class="btn bsec bsm" id="btn-cli-cancelar">Cancelar</button>
+        <button type="button" class="btn bp bsm" id="btn-cli-salvar">Salvar e selecionar</button>
       </div>
     </div>
   </div>
@@ -1324,8 +1324,12 @@ function toggleNovoClienteInline() {
     document.getElementById('ev-cli-doc').value = '';
     setTimeout(function() {
       document.getElementById('ev-cli-nome').focus();
-      // Scroll the form into view inside the modal
       el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      // Wire buttons via JS to avoid onclick blocking issues
+      var btnS = document.getElementById('btn-cli-salvar');
+      var btnC = document.getElementById('btn-cli-cancelar');
+      if(btnS) { btnS.onclick = salvarClienteInline; }
+      if(btnC) { btnC.onclick = toggleNovoClienteInline; }
     }, 100);
   }
 }
@@ -1343,9 +1347,11 @@ async function salvarClienteInline() {
     if(tel)   obj.telefone  = tel;
     if(email) obj.email     = email;
     if(doc)   obj.cpf_cnpj = doc;
+    console.log('Inserindo cliente:', JSON.stringify(obj));
     const { data, error } = await sb.from('clientes').insert(obj).select();
-    if(error) { alert('Erro ao salvar: ' + error.message); return; }
-    if(!data || !data.length) { alert('Erro: nenhum dado retornado.'); return; }
+    console.log('Resultado:', JSON.stringify({data, error}));
+    if(error) { alert('Erro: ' + error.message + ' | Codigo: ' + error.code + ' | Hint: ' + error.hint); return; }
+    if(!data || !data.length) { alert('Insert OK mas sem retorno — verifique RLS no Supabase.'); return; }
     await loadAll();
     loadClientesSelect();
     document.getElementById('ev-cliente').value = data[0].id;
