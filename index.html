@@ -1332,7 +1332,7 @@ async function salvarClienteInline() {
   const email = document.getElementById('ev-cli-email').value.trim();
   const doc   = document.getElementById('ev-cli-doc').value.trim();
   if(!nome) { alert('Informe o nome do cliente.'); return; }
-  const obj = { nome };
+  const obj = { nome, tipo_pessoa: 'pf' };
   if(tel)   obj.telefone  = tel;
   if(email) obj.email     = email;
   if(doc)   obj.cpf_cnpj = doc;
@@ -1457,6 +1457,7 @@ function limparFormCli() {
 
 async function salvarCliente() {
   const obj = coletarDadosCli(); if(!obj) return;
+  if(!obj.tipo_pessoa) obj.tipo_pessoa = 'pf';
   const { data, error } = await sb.from('clientes').insert(obj).select();
   if(error) { alert('Erro ao salvar cliente: ' + error.message); return; }
   closeModal('novoCliente');
