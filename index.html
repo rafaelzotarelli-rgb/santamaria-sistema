@@ -1357,17 +1357,9 @@ async function salvarClienteInline() {
   var result = await sb.from('clientes').insert(obj).select();
   var data  = result.data;
   var error = result.error;
-
-  if(error) {
-    alert('Erro ao salvar: ' + error.message);
-    if(btnSalvar) { btnSalvar.textContent = 'Salvar e selecionar'; btnSalvar.disabled = false; }
-    return;
-  }
-  if(!data || !data.length) {
-    alert('Cliente salvo mas sem retorno. Verifique RLS no Supabase (politica SELECT em clientes).');
-    if(btnSalvar) { btnSalvar.textContent = 'Salvar e selecionar'; btnSalvar.disabled = false; }
-    return;
-  }
+  alert('DEBUG — error: ' + JSON.stringify(error) + ' | data: ' + JSON.stringify(data));
+  if(btnSalvar) { btnSalvar.textContent = 'Salvar e selecionar'; btnSalvar.disabled = false; }
+  return;
 
   // Atualiza apenas o select de clientes sem recarregar tudo
   var novoId = data[0].id;
