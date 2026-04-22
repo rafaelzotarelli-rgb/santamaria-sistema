@@ -1357,9 +1357,25 @@ async function salvarClienteInline() {
   var result = await sb.from('clientes').insert(obj).select();
   var data  = result.data;
   var error = result.error;
-  alert('DEBUG — error: ' + JSON.stringify(error) + ' | data: ' + JSON.stringify(data));
+
+  if(error) {
+    alert('Erro ao salvar: ' + error.message);
+    if(btnSalvar) { btnSalvar.textContent = 'Salvar e selecionar'; btnSalvar.disabled = false; }
+    return;
+  }
+  if(!data || !data.length) {
+    alert('Erro: cliente nao retornado. Verifique RLS no Supabase.');
+    if(btnSalvar) { btnSalvar.textContent = 'Salvar e selecionar'; btnSalvar.disabled = false; }
+    return;
+  }
+
+  var novoId = data[0].id;
+  CACHE.clientes.push(data[0]);
+  loadClientesSelect();
+  document.getElementById('ev-cliente').value = novoId;
   if(btnSalvar) { btnSalvar.textContent = 'Salvar e selecionar'; btnSalvar.disabled = false; }
-  return;
+  toggleNovoClienteInline();
+  loadAll();
 
   // Atualiza apenas o select de clientes sem recarregar tudo
   var novoId = data[0].id;
