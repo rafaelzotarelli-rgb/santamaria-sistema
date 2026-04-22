@@ -1335,32 +1335,45 @@ function toggleNovoClienteInline() {
 }
 
 async function salvarClienteInline() {
-  const btn = event && event.target;
-  if(btn) { btn.textContent = 'Salvando...'; btn.disabled = true; }
-  try {
-    const nome  = document.getElementById('ev-cli-nome').value.trim();
-    const tel   = document.getElementById('ev-cli-tel').value.trim();
-    const email = document.getElementById('ev-cli-email').value.trim();
-    const doc   = document.getElementById('ev-cli-doc').value.trim();
-    if(!nome) { alert('Informe o nome do cliente.'); return; }
-    const obj = { nome, tipo_pessoa: 'pf' };
-    if(tel)   obj.telefone  = tel;
-    if(email) obj.email     = email;
-    if(doc)   obj.cpf_cnpj = doc;
-    console.log('Inserindo cliente:', JSON.stringify(obj));
-    const { data, error } = await sb.from('clientes').insert(obj).select();
-    console.log('Resultado:', JSON.stringify({data, error}));
-    if(error) { alert('Erro: ' + error.message + ' | Codigo: ' + error.code + ' | Hint: ' + error.hint); return; }
-    if(!data || !data.length) { alert('Insert OK mas sem retorno — verifique RLS no Supabase.'); return; }
-    await loadAll();
-    loadClientesSelect();
-    document.getElementById('ev-cliente').value = data[0].id;
-    toggleNovoClienteInline();
-  } catch(err) {
-    alert('Erro inesperado: ' + err.message);
-  } finally {
-    if(btn) { btn.textContent = 'Salvar e selecionar'; btn.disabled = false; }
+  var btnSalvar = document.getElementById('btn-cli-salvar');
+  if(btnSalvar) { btnSalvar.textContent = 'Salvando...'; btnSalvar.disabled = true; }
+
+  var nome  = document.getElementById('ev-cli-nome').value.trim();
+  var tel   = document.getElementById('ev-cli-tel').value.trim();
+  var email = document.getElementById('ev-cli-email').value.trim();
+  var doc   = document.getElementById('ev-cli-doc').value.trim();
+
+  if(!nome) {
+    alert('Informe o nome do cliente.');
+    if(btnSalvar) { btnSalvar.textContent = 'Salvar e selecionar'; btnSalvar.disabled = false; }
+    return;
   }
+
+  var obj = { nome: nome, tipo_pessoa: 'pf' };
+  if(tel)   obj.telefone  = tel;
+  if(email) obj.email     = email;
+  if(doc)   obj.cpf_cnpj = doc;
+
+  var result = await sb.from('clientes').insert(obj).select();
+  var data  = result.data;
+  var error = result.error;
+
+  if(error) {
+    alert('Erro ao salvar: ' + error.message);
+    if(btnSalvar) { btnSalvar.textContent = 'Salvar e selecionar'; btnSalvar.disabled = false; }
+    return;
+  }
+  if(!data || !data.length) {
+    alert('Cliente salvo mas sem retorno. Verifique as permissoes RLS no Supabase.');
+    if(btnSalvar) { btnSalvar.textContent = 'Salvar e selecionar'; btnSalvar.disabled = false; }
+    return;
+  }
+
+  await loadAll();
+  loadClientesSelect();
+  document.getElementById('ev-cliente').value = data[0].id;
+  if(btnSalvar) { btnSalvar.textContent = 'Salvar e selecionar'; btnSalvar.disabled = false; }
+  toggleNovoClienteInline();
 }
 
 async function salvarEvento() {
