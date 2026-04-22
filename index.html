@@ -1414,7 +1414,23 @@ async function salvarEvento() {
   const clienteId = document.getElementById('ev-cliente').value || null;
   if(!nome || !data) { alert('Preencha o nome e a data do evento.'); return; }
   const horario = horaRaw ? (horaRaw.length === 5 ? horaRaw + ':00' : horaRaw) : null;
-  const obj = { nome, tipo, data, horario, local, convidados, valor, obs, status: 'confirmado', cliente_id: clienteId };
+  const obj = { nome, tipo, data, horario, local, convidados, valor, obs, cliente_id: clienteId };
+
+  // Modo edição
+  if(window._editEvId) {
+    const evId = window._editEvId;
+    const { error } = await sb.from('eventos').update(obj).eq('id', evId);
+    if(error) { alert('Erro ao salvar: ' + error.message); return; }
+    closeModal('novoEvento');
+    window._editEvId = null;
+    document.querySelector('#modal-novoEvento .mtitle').childNodes[0].textContent = 'Novo Evento';
+    await loadAll();
+    verEvento(evId);
+    return;
+  }
+
+  // Novo evento
+  obj.status = 'confirmado';
   const { error } = await sb.from('eventos').insert(obj);
   if(error) { alert('Erro ao salvar evento: ' + error.message + ' (codigo: ' + error.code + ')'); return; }
   closeModal('novoEvento');
@@ -1515,6 +1531,24 @@ function limparFormCli() {
 async function salvarCliente() {
   const obj = coletarDadosCli(); if(!obj) return;
   if(!obj.tipo_pessoa) obj.tipo_pessoa = 'pf';
+
+  // Modo edição
+  if(window._editCliId) {
+    const cliId = window._editCliId;
+    const evId  = window._editCliEvId;
+    const { error } = await sb.from('clientes').update(obj).eq('id', cliId);
+    if(error) { alert('Erro: ' + error.message); return; }
+    closeModal('novoCliente');
+    limparFormCli();
+    window._editCliId   = null;
+    window._editCliEvId = null;
+    document.querySelector('#modal-novoCliente .mtitle').childNodes[0].textContent = 'Novo Cliente';
+    await loadAll();
+    if(evId) verEvento(evId);
+    return;
+  }
+
+  // Novo cliente
   const { data, error } = await sb.from('clientes').insert(obj).select();
   if(error) { alert('Erro ao salvar cliente: ' + error.message); return; }
   closeModal('novoCliente');
@@ -1739,9 +1773,16 @@ async function salvarLanc() {
   const valor=parseFloat(document.getElementById('lanc-valor').value);
   const data=document.getElementById('lanc-data').value;
   if(!desc||!valor||!data){alert('Preencha descrição, valor e data.');return;}
-  await sb.from('lancamentos').insert({descricao:desc,tipo:document.getElementById('lanc-tipo').value,valor,data,conta_id:document.getElementById('lanc-conta').value||null,categoria:document.getElementById('lanc-cat').value,forma_pagamento:document.getElementById('lanc-forma').value,obs:document.getElementById('lanc-obs').value,status:'pago'});
+  const obj = {descricao:desc,tipo:document.getElementById('lanc-tipo').value,valor,data,conta_id:document.getElementById('lanc-conta').value||null,categoria:document.getElementById('lanc-cat').value,forma_pagamento:document.getElementById('lanc-forma').value,obs:document.getElementById('lanc-obs').value,status:'pago'};
+  if(window._lancEvId) obj.evento_id = window._lancEvId;
+  const { data: rows, error } = await sb.from('lancamentos').insert(obj).select();
+  if(error){ alert('Erro ao salvar: ' + error.message); return; }
   closeModal('novoLanc');
-  await loadAll(); renderFinanceiro();
+  const evId = window._lancEvId;
+  window._lancEvId = null;
+  await loadAll();
+  if(evId) { verEvento(evId); }
+  else { renderFinanceiro(); }
 }
 
 // ── OFX ──────────────────────────────────────────────────────────
@@ -2277,83 +2318,10 @@ function resumoFinanceiro(evId) {
   win.document.close();
 }
 // Hook salvarLanc to link evento if coming from evento detail
-const _origSalvarLanc = salvarLanc;
-async function salvarLanc() {
-  // If opened from evento detail, link the evento_id
-  if(window._lancEvId) {
-    const evId = window._lancEvId;
-    const desc  = document.getElementById('lanc-desc').value.trim();
-    const valor = parseFloat(document.getElementById('lanc-valor').value);
-    const data  = document.getElementById('lanc-data').value;
-    if(!desc||!valor||!data){ alert('Preencha descricao, valor e data.'); return; }
-    const { error } = await sb.from('lancamentos').insert({
-      descricao: desc, tipo: document.getElementById('lanc-tipo').value,
-      valor, data, conta_id: document.getElementById('lanc-conta').value||null,
-      categoria: document.getElementById('lanc-cat').value,
-      forma_pagamento: document.getElementById('lanc-forma').value,
-      obs: document.getElementById('lanc-obs').value,
-      status: 'pago', evento_id: evId,
-    });
-    if(error){ alert('Erro: ' + error.message); return; }
-    closeModal('novoLanc');
-    window._lancEvId = null;
-    await loadAll();
-    verEvento(evId);
-    return;
-  }
-  await _origSalvarLanc();
-}
 
-// Hook salvarEvento to support edit mode
-const _origSalvarEvento = salvarEvento;
-async function salvarEvento() {
-  if(window._editEvId) {
-    const evId  = window._editEvId;
-    const nome  = document.getElementById('ev-nome').value.trim();
-    const data  = document.getElementById('ev-data').value;
-    if(!nome||!data){ alert('Preencha nome e data.'); return; }
-    const horaRaw = document.getElementById('ev-hora').value||'';
-    const obj = {
-      nome, tipo: document.getElementById('ev-tipo').value, data,
-      horario: horaRaw ? (horaRaw.length===5?horaRaw+':00':horaRaw) : null,
-      local: document.getElementById('ev-local').value.trim()||null,
-      convidados: Number(document.getElementById('ev-conv').value)||0,
-      valor: parseFloat(document.getElementById('ev-valor').value)||0,
-      obs: document.getElementById('ev-obs').value.trim()||null,
-      cliente_id: document.getElementById('ev-cliente').value||null,
-    };
-    const { error } = await sb.from('eventos').update(obj).eq('id', evId);
-    if(error){ alert('Erro ao salvar: ' + error.message); return; }
-    closeModal('novoEvento');
-    window._editEvId = null;
-    document.querySelector('#modal-novoEvento .mtitle').childNodes[0].textContent = 'Novo Evento';
-    await loadAll();
-    verEvento(evId);
-    return;
-  }
-  await _origSalvarEvento();
-}
 
-// Hook salvarCliente to support edit mode
-const _origSalvarCliente = salvarCliente;
-async function salvarCliente() {
-  if(window._editCliId) {
-    const cliId = window._editCliId;
-    const evId  = window._editCliEvId;
-    const obj = coletarDadosCli(); if(!obj) return;
-    const { error } = await sb.from('clientes').update(obj).eq('id', cliId);
-    if(error){ alert('Erro: ' + error.message); return; }
-    closeModal('novoCliente');
-    limparFormCli();
-    window._editCliId   = null;
-    window._editCliEvId = null;
-    document.querySelector('#modal-novoCliente .mtitle').childNodes[0].textContent = 'Novo Cliente';
-    await loadAll();
-    if(evId) verEvento(evId);
-    return;
-  }
-  await _origSalvarCliente();
-}
+
+
 
 
 
