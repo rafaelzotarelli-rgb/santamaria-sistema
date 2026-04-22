@@ -1370,11 +1370,25 @@ async function salvarClienteInline() {
   }
 
   var novoId = data[0].id;
+  // Adiciona ao cache
   CACHE.clientes.push(data[0]);
-  loadClientesSelect();
-  document.getElementById('ev-cliente').value = novoId;
+  // Atualiza select
+  var sel = document.getElementById('ev-cliente');
+  if(sel) {
+    var opt = document.createElement('option');
+    opt.value = novoId;
+    opt.textContent = data[0].nome;
+    sel.appendChild(opt);
+    sel.value = novoId;
+  }
+  // Fecha form inline
+  var formInline = document.getElementById('novo-cli-inline');
+  var btnAbrir   = document.getElementById('btn-novo-cli-inline');
+  if(formInline) formInline.style.display = 'none';
+  if(btnAbrir)   btnAbrir.textContent = '+ Novo cliente';
+  // Restaura botao
   if(btnSalvar) { btnSalvar.textContent = 'Salvar e selecionar'; btnSalvar.disabled = false; }
-  toggleNovoClienteInline();
+  // Recarrega em background
   loadAll();
 
   // Atualiza apenas o select de clientes sem recarregar tudo
