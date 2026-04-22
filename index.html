@@ -1364,16 +1364,20 @@ async function salvarClienteInline() {
     return;
   }
   if(!data || !data.length) {
-    alert('Cliente salvo mas sem retorno. Verifique as permissoes RLS no Supabase.');
+    alert('Cliente salvo mas sem retorno. Verifique RLS no Supabase (politica SELECT em clientes).');
     if(btnSalvar) { btnSalvar.textContent = 'Salvar e selecionar'; btnSalvar.disabled = false; }
     return;
   }
 
-  await loadAll();
+  // Atualiza apenas o select de clientes sem recarregar tudo
+  var novoId = data[0].id;
+  CACHE.clientes.push(data[0]);
   loadClientesSelect();
-  document.getElementById('ev-cliente').value = data[0].id;
+  document.getElementById('ev-cliente').value = novoId;
   if(btnSalvar) { btnSalvar.textContent = 'Salvar e selecionar'; btnSalvar.disabled = false; }
   toggleNovoClienteInline();
+  // Recarrega em background
+  loadAll();
 }
 
 async function salvarEvento() {
